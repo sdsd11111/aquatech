@@ -1,0 +1,38 @@
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../auth/[...nextauth]/route'
+
+export async function GET(request: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session || (session.user as any).role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const search = searchParams.get('q')
+
+    let whereClause = {}
+    if (search) {
+      whereClause = {
+        OR: [
+          { name: { contains: search } },
+          { email: { contains: search } },
+          { phone: { contains: search } }
+        ]
+      }
+    }
+
+    const clients = await prisma.client.findMany({
+      where: whereClause,
+      orderBy: { name: 'asc' },
+      take: 20
+    })
+
+    return NextResponse.json(clients)
+  } catch (error) {
+    console.error('Error fetching clients:', error)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
+}

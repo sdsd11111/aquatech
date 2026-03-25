@@ -1,0 +1,30 @@
+import type { Metadata, Viewport } from "next";
+import "./globals.css";
+import SessionWrapper from "@/components/SessionWrapper";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
+export const metadata: Metadata = {
+  title: "Aquatech CRM — Innovación Hidráulica",
+  description: "Sistema de gestión y seguimiento de proyectos en campo para Aquatech Loja",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="es" data-scroll-behavior="smooth">
+      <body>
+        <SessionWrapper>
+          {children}
+        </SessionWrapper>
+      </body>
+    </html>
+  );
+}

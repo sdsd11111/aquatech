@@ -1,0 +1,99 @@
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { redirect } from 'next/navigation'
+import { prisma } from '@/lib/prisma'
+import Link from 'next/link'
+import OperatorProjectClient from './OperatorProjectClient'
+
+export const dynamic = 'force-dynamic'
+
+export default async function OperatorProjectDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const session = await getServerSession(authOptions)
+  if (!session) redirect('/admin/login')
+
+  const userId = Number(session.user.id)
+  const projectId = Number(id)
+
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    include: {
+      client: { select: { name: true, phone: true, address: true, city: true } },
+      phases: { orderBy: { displayOrder: 'asc' } },
+      team: { include: { user: { select: { name: true, role: true } } } },
+      chatMessages: {
+        take: 1
+      }
+    }
+  })
+
+  // If project doesn't exist or user not in team, back to dashboard
+  if (!project || project.team.length === 0) {
+    redirect('/admin/operador')
+  }
+
+  // Reload all chat messages for this project with user info
+  const chatMessages = await prisma.chatMessage.findMany({
+    where: { projectId },
+    orderBy: { createdAt: 'asc' },
+    include: { user: { select: { name: true } }, media: true }
+  })
+
+  // Find if user has an active day record for this project
+  const activeDayRecord = await prisma.dayRecord.findFirst({
+    where: { userId, projectId, endTime: null }
+  })
+
+  // get user's expenses
+  const myExpenses = await prisma.expense.findMany({
+    where: { userId, projectId },
+    orderBy: { createdAt: 'desc' }
+  })
+
+  // Serialize safe objects
+  const safeProject = {
+    id: project.id,
+    title: project.title,
+    status: project.status,
+    address: project.address || project.client?.address,
+    phases: project.phases.map(p => ({
+      id: p.id,
+      title: p.title,
+      status: p.status,
+      description: p.description
+    })),
+    team: project.team.map(t => ({
+      id: t.userId,
+      name: t.user.name,
+      role: t.user.role
+    }))
+  }
+
+  const safeChat = chatMessages.map(msg => ({
+    id: msg.id,
+    phaseId: msg.phaseId,
+    content: msg.content,
+    type: msg.type,
+    createdAt: msg.createdAt.toISOString(),
+    userName: msg.user.name,
+    isMe: msg.userId === userId,
+    media: msg.media
+  }))
+
+  const safeRecord = activeDayRecord ? { id: activeDayRecord.id, startTime: activeDayRecord.startTime.toISOString() } : null
+
+  return (
+    <div className="p-0 sm:p-6 pb-24">
+      <OperatorProjectClient 
+        project={safeProject} 
+        initialChat={safeChat} 
+        activeRecord={safeRecord}
+        expenses={myExpenses.map(e => ({ id: e.id, description: e.description, amount: Number(e.amount), date: e.date.toISOString() }))}
+        userId={userId}
+        clientName={project.client?.name || 'Cliente sin nombre'}
+        projectAddress={project.address || project.client?.address || ''}
+        projectCity={project.client?.city || ''}
+      />
+    </div>
+  )
+}

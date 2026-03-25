@@ -1,0 +1,712 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import ProjectUploader, { ProjectFile } from '@/components/ProjectUploader'
+
+import Link from 'next/link'
+
+export default function OperatorProjectClient({ 
+  project, 
+  initialChat, 
+  activeRecord, 
+  expenses, 
+  userId,
+  clientName,
+  projectAddress,
+  projectCity
+}: any) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const view = searchParams.get('view') || 'records'
+  const [activeTab, setActiveTab] = useState<'records' | 'chat'>(view as 'records' | 'chat')
+
+  useEffect(() => {
+    setActiveTab((searchParams.get('view') || 'records') as 'records' | 'chat')
+  }, [searchParams])
+  const [loading, setLoading] = useState(false)
+  const [expenseForm, setExpenseForm] = useState(false)
+  const [amount, setAmount] = useState('')
+  const [description, setDescription] = useState('')
+  const [mounted, setMounted] = useState(false)
+  const [isSmallScreen, setIsSmallScreen] = useState(false)
+  const [chatFilter, setChatFilter] = useState<'all' | 'media' | 'notes' | 'text'>('all')
+  const [waForwardMsg, setWaForwardMsg] = useState<any>(null)
+
+  // WhatsApp State
+  const [waCategory, setWaCategory] = useState('')
+  const [waPhone, setWaPhone] = useState('')
+  const [waMessage, setWaMessage] = useState('')
+  const [waSending, setWaSending] = useState(false)
+  const [waSuccess, setWaSuccess] = useState(false)
+
+  const waCategories = [
+    { id: 'urgencia', label: '🚨 Urgencia', color: '#ef4444', template: `⚠️ URGENCIA - Proyecto: ${project.title}\n\nDescripción: ` },
+    { id: 'material', label: '📦 Falta de Material', color: '#f59e0b', template: `📦 SOLICITUD DE MATERIAL - Proyecto: ${project.title}\n\nMaterial requerido: ` },
+    { id: 'cotizacion', label: '💰 Cotización', color: '#3b82f6', template: `💰 SOLICITUD DE COTIZACIÓN - Proyecto: ${project.title}\n\nDetalle: ` },
+    { id: 'reporte', label: '📋 Reporte', color: '#8b5cf6', template: `📋 REPORTE DE AVANCE - Proyecto: ${project.title}\n\nEstado: ` },
+    { id: 'otro', label: '💬 Otro', color: '#06b6d4', template: `📌 NOTIFICACIÓN - Proyecto: ${project.title}\n\n` },
+  ]
+
+  const handleWaSend = async () => {
+    if (!waPhone.trim() || !waMessage.trim()) {
+      alert('Por favor completa el número y el mensaje')
+      return
+    }
+    setWaSending(true)
+    try {
+      const res = await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: waPhone.replace(/\D/g, ''),
+          message: waMessage,
+          projectId: project.id,
+          category: waCategory,
+        })
+      })
+      if (res.ok) {
+        setWaSuccess(true)
+        setTimeout(() => {
+          setWaSuccess(false)
+          setWaForwardMsg(null)
+          setWaCategory('')
+          setWaPhone('')
+          setWaMessage('')
+        }, 2000)
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Error enviando mensaje de WhatsApp')
+      }
+    } catch (e) {
+      alert('Error de conexión al enviar WhatsApp')
+    } finally {
+      setWaSending(false)
+    }
+  }
+
+  useEffect(() => {
+    setMounted(true)
+    const checkScreen = () => setIsSmallScreen(window.innerWidth < 640)
+    checkScreen()
+    window.addEventListener('resize', checkScreen)
+    return () => window.removeEventListener('resize', checkScreen)
+  }, [])
+
+  // Chat State
+  const [activePhase, setActivePhase] = useState<number | null>(project.phases.find((p: any) => p.status === 'ACTIVO' || p.status === 'EN_PROGRESO')?.id || project.phases[0]?.id || null)
+  const [message, setMessage] = useState('')
+  const [notePhase, setNotePhase] = useState<number | null>(activePhase)
+  const [note, setNote] = useState('')
+
+  const handleDayRecord = async () => {
+    setLoading(true)
+    try {
+      if (activeRecord) {
+        // End Day
+        await fetch('/api/day-records', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recordId: activeRecord.id, projectId: project.id })
+        })
+      } else {
+        // Start Day
+        // get location
+        let location = null
+        if ('geolocation' in navigator) {
+          try {
+            location = await new Promise((resolve) => {
+              navigator.geolocation.getCurrentPosition(
+                pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                () => resolve(null) // ignore errors for now, we don't want to block
+              )
+            })
+          } catch(e) {}
+        }
+        
+        await fetch('/api/day-records', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId: project.id, location })
+        })
+      }
+      router.refresh()
+    } catch (e) {
+      console.error(e)
+      alert("Error actualizando registro de horas")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAddExpense = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      let location: any = null
+      if ('geolocation' in navigator) {
+        location = await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => resolve(null)
+          )
+        })
+      }
+
+      await fetch(`/api/projects/${project.id}/expenses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          amount: Number(amount), 
+          description, 
+          date: new Date().toISOString(),
+          lat: location?.lat,
+          lng: location?.lng
+        })
+      })
+      setExpenseForm(false)
+      setAmount('')
+      setDescription('')
+      router.refresh()
+    } catch (e) {
+      alert("Error agregando gasto")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCompletePhase = async (phaseId: number) => {
+    if (!confirm("¿Seguro que deseas marcar esta fase como terminada? Esto desbloqueará la siguiente.")) return
+    setLoading(true)
+    try {
+      await fetch(`/api/projects/${project.id}/phases/${phaseId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'COMPLETADA' })
+      })
+      router.refresh()
+    } catch (e) {
+      alert("Error completando fase")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSendMessage = async (e: React.FormEvent, customMsg?: string, customPhase?: number, mediaFile?: File) => {
+    if (e) e.preventDefault()
+    const msgToSend = customMsg || message
+    const phaseIdToSend = customPhase || activePhase
+    
+    if (!msgToSend.trim() && !mediaFile && !customMsg) return
+    setLoading(true)
+    try {
+      let location: any = null
+      if ('geolocation' in navigator) {
+        location = await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => resolve(null)
+          )
+        })
+      }
+
+      let mediaData = null
+      if (mediaFile) {
+        const base64 = await new Promise((resolve) => {
+          const reader = new FileReader()
+          reader.onloadend = () => resolve(reader.result)
+          reader.readAsDataURL(mediaFile)
+        })
+        mediaData = {
+          base64,
+          filename: mediaFile.name,
+          mimeType: mediaFile.type
+        }
+      }
+
+      await fetch(`/api/projects/${project.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          phaseId: phaseIdToSend, 
+          content: msgToSend, 
+          type: mediaFile ? (mediaFile.type.startsWith('image') ? 'IMAGE' : 'VIDEO') : (customMsg ? 'NOTE' : 'TEXT'),
+          lat: location?.lat,
+          lng: location?.lng,
+          media: mediaData
+        })
+      })
+      if (!customMsg) setMessage('')
+      else setNote('')
+      router.refresh()
+    } catch (e) {
+      alert("Error enviando mensaje")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleUploadMedia = async (file: ProjectFile) => {
+    setLoading(true)
+    try {
+      let location: any = null
+      if ('geolocation' in navigator) {
+        location = await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => resolve(null)
+          )
+        })
+      }
+
+      await fetch(`/api/projects/${project.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          phaseId: activePhase || project.phases[0]?.id, 
+          content: '', 
+          type: file.type,
+          lat: location?.lat,
+          lng: location?.lng,
+          media: {
+            url: file.url,
+            filename: file.filename,
+            mimeType: file.mimeType
+          }
+        })
+      })
+      router.refresh()
+    } catch (e) {
+      alert("Error vinculando archivo")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Extract all media files from the project chat messages
+  const projectMediaFiles: ProjectFile[] = initialChat
+    .filter((msg: any) => msg.media && msg.media.length > 0)
+    .flatMap((msg: any) => msg.media.map((m: any) => {
+      let type: 'IMAGE' | 'VIDEO' | 'DOCUMENT' = 'DOCUMENT'
+      if (msg.type === 'IMAGE' || m.mimeType.startsWith('image/')) type = 'IMAGE'
+      else if (msg.type === 'VIDEO' || m.mimeType.startsWith('video/')) type = 'VIDEO'
+      
+      return {
+        url: m.url,
+        filename: m.filename,
+        mimeType: m.mimeType,
+        type
+      }
+    }))
+
+  const filteredChat = initialChat.filter((msg: any) => {
+    if (msg.phaseId !== activePhase) return false
+    if (chatFilter === 'media') return msg.media && msg.media.length > 0
+    if (chatFilter === 'notes') return msg.type === 'NOTE'
+    if (chatFilter === 'text') return msg.type === 'TEXT' && (!msg.media || msg.media.length === 0)
+    return true
+  })
+
+  return (
+    <div style={{ padding: isSmallScreen ? '5px 10px 0 10px' : '0', minHeight: isSmallScreen ? 'calc(100vh - 128px)' : 'auto', display: 'flex', flexDirection: 'column' }}>
+      {/* Project Header */}
+      <div style={{ padding: isSmallScreen ? '10px 10px 0 10px' : '0', marginBottom: isSmallScreen ? '10px' : '20px' }}>
+        <Link href="/admin/operador" className="btn btn-ghost btn-sm" style={{ padding: 0, color: 'var(--primary)', marginBottom: isSmallScreen ? '5px' : '10px', display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: isSmallScreen ? '0.8rem' : '0.9rem' }}>
+          &larr; {isSmallScreen ? 'Volver' : 'Volver a Mis Proyectos'}
+        </Link>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 style={{ fontSize: isSmallScreen ? '1.4rem' : '1.8rem', margin: 0, color: 'var(--text)', fontWeight: 'bold' }}>{project.title}</h1>
+          <span className={`status-badge status-${project.status.toLowerCase()}`} style={{ fontSize: isSmallScreen ? '0.7rem' : '0.8rem', padding: isSmallScreen ? '2px 8px' : '4px 12px' }}>
+            {project.status === 'ACTIVO' ? 'Activo' : 'Pendiente'}
+          </span>
+        </div>
+        
+        <div style={{ 
+          display: 'flex', 
+          gap: isSmallScreen ? '8px' : '15px', 
+          marginTop: isSmallScreen ? '8px' : '15px', 
+          color: 'var(--text-muted)', 
+          fontSize: isSmallScreen ? '0.75rem' : '0.9rem', 
+          flexWrap: 'wrap',
+          alignItems: 'center'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <svg width={isSmallScreen ? "12" : "14"} height={isSmallScreen ? "12" : "14"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+            {clientName}
+          </div>
+          {(projectAddress) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <svg width={isSmallScreen ? "12" : "14"} height={isSmallScreen ? "12" : "14"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              {projectAddress} {projectCity ? `, ${projectCity}` : ''}
+            </div>
+          )}
+          {isSmallScreen && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', paddingLeft: '8px', borderLeft: '1px solid var(--border)' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              {project.team.length}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', padding: isSmallScreen ? '0 10px' : '0' }}>
+        <button className={`btn btn-sm ${activeTab === 'records' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setActiveTab('records')}>Registros</button>
+        <button className={`btn btn-sm ${activeTab === 'chat' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setActiveTab('chat')}>Bitácora</button>
+      </div>
+
+      <div className="tab-content" style={{ flex: isSmallScreen ? 1 : 'none', display: isSmallScreen ? 'flex' : 'block', flexDirection: 'column', overflow: isSmallScreen ? 'hidden' : 'visible' }}>
+        {activeTab === 'records' && (
+          <div style={{ display: 'grid', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+              <div className="card">
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '15px' }}>Registro de Jornada</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '20px' }}>
+                  Registra tu hora de entrada y salida para contabilizar tus horas en obra.
+                </p>
+                <button 
+                  className={`btn btn-lg btn-full ${activeRecord ? 'btn-danger' : 'btn-primary'}`} 
+                  onClick={handleDayRecord}
+                  disabled={loading}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                >
+                  {loading ? 'Cargando...' : activeRecord ? (
+                    <>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                      Terminar Jornada
+                    </>
+                  ) : (
+                    <>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      Iniciar Jornada
+                    </>
+                  )}
+                </button>
+                {activeRecord && mounted && (
+                  <p style={{ textAlign: 'center', color: 'var(--warning)', marginTop: '15px', fontWeight: 'bold' }}>
+                    Día en progreso desde las {new Date(activeRecord.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  </p>
+                )}
+              </div>
+
+              <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h3 style={{ fontSize: '1.2rem', margin: 0 }}>Gastos Registrados</h3>
+                  <button className="btn btn-primary btn-sm" onClick={() => setExpenseForm(!expenseForm)} disabled={loading}>
+                    {expenseForm ? 'Cancelar' : '+ Agregar'}
+                  </button>
+                </div>
+
+                {expenseForm && (
+                  <form onSubmit={handleAddExpense} style={{ display: 'flex', flexDirection: 'column', gap: '15px', padding: '15px', backgroundColor: 'var(--bg-deep)', borderRadius: '8px', marginBottom: '20px' }}>
+                    <div className="form-group">
+                      <label className="form-label">Monto (L.)</label>
+                      <input type="number" step="0.01" className="form-input" value={amount} onChange={e => setAmount(e.target.value)} required />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Descripción del gasto</label>
+                      <input type="text" className="form-input" value={description} onChange={e => setDescription(e.target.value)} required placeholder="Ej: Pasajes, Alimentación" />
+                    </div>
+                    <button type="submit" className="btn btn-primary" disabled={loading}>Guardar Gasto</button>
+                  </form>
+                )}
+
+                {expenses.length === 0 && !expenseForm ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: '20px 0' }}>No has registrado gastos en este proyecto hoy.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {expenses.map((e: any) => (
+                      <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', backgroundColor: 'var(--bg-deep)', borderRadius: '6px' }}>
+                        <div>
+                          <span style={{ display: 'block', color: 'var(--text)' }}>{e.description}</span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{mounted ? new Date(e.date).toLocaleDateString() : ''}</span>
+                        </div>
+                        <span style={{ fontWeight: 'bold', color: 'var(--warning)' }}>$ {e.amount.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="card">
+              <h3 style={{ fontSize: '1.2rem', marginBottom: '15px' }}>Avances de Fase & Notas</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <div className="form-group">
+                  <label className="form-label">Fase Actual</label>
+                  <select 
+                    className="form-input" 
+                    value={notePhase || ''} 
+                    onChange={e => setNotePhase(Number(e.target.value))}
+                  >
+                    {project.phases.map((p: any) => (
+                      <option key={p.id} value={p.id} disabled={p.status === 'COMPLETADA'}>
+                        {p.title} ({p.status})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Nota de Trabajo</label>
+                  <textarea 
+                    className="form-input" 
+                    rows={3} 
+                    placeholder="Ej: Se terminó la cimentación..."
+                    value={note}
+                    onChange={e => setNote(e.target.value)}
+                    style={{ resize: 'none' }}
+                  />
+                </div>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={() => handleSendMessage(null as any, note, notePhase as number)}
+                  disabled={loading || !note.trim() || !notePhase}
+                >
+                  Guardar Nota de Avance
+                </button>
+              </div>
+            </div>
+
+            <div className="card">
+              <ProjectUploader 
+                files={projectMediaFiles}
+                onAddFile={handleUploadMedia}
+                title="Registros Multimedia"
+              />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'chat' && (
+          <div className="chat-container" style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            height: isSmallScreen ? 'calc(100vh - 200px)' : '65vh', 
+            backgroundColor: 'var(--bg-card)', 
+            borderRadius: isSmallScreen ? '0' : '12px', 
+            overflow: 'hidden', 
+            border: isSmallScreen ? 'none' : '1px solid var(--border)',
+            margin: isSmallScreen ? '0 -10px' : '0' 
+          }}>
+            {!isSmallScreen && (
+              <div style={{ padding: '10px 15px', backgroundColor: 'var(--bg-deep)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', marginLeft: '5px' }}>
+                        {project.team.map((t: any, idx: number) => (
+                            <div key={t.id} style={{ 
+                                width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'var(--primary)', 
+                                color: 'var(--bg-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                fontSize: '0.65rem', fontWeight: 'bold', border: '2px solid var(--bg-deep)',
+                                marginLeft: idx === 0 ? 0 : '-8px', zIndex: project.team.length - idx
+                            }} title={t.name}>
+                                {t.name.charAt(0)}
+                            </div>
+                        ))}
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{project.team.length} participantes</span>
+                 </div>
+                 <div style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'bold' }}>EN LÍNEA</div>
+              </div>
+            )}
+
+            <div style={{ 
+              padding: isSmallScreen ? '8px' : '12px', 
+              borderBottom: '1px solid var(--border-color)', 
+              backgroundColor: 'var(--bg-deep)', 
+              overflowX: 'auto', 
+              display: 'flex', 
+              gap: '8px',
+              scrollbarWidth: 'none'
+            }}>
+              {project.phases.map((phase: any, idx: number) => {
+                const isPreviousCompleted = idx === 0 || project.phases[idx - 1].status === 'COMPLETADA'
+                const isLocked = !isPreviousCompleted && phase.status !== 'ACTIVO' && phase.status !== 'EN_PROGRESO'
+                const isActive = activePhase === phase.id
+                const isCompleted = phase.status === 'COMPLETADA'
+                
+                return (
+                  <button 
+                    key={phase.id} 
+                    onClick={() => !isLocked && setActivePhase(phase.id)}
+                    disabled={isLocked}
+                    style={{ 
+                      whiteSpace: 'nowrap',
+                      opacity: isLocked ? 0.4 : 1,
+                      cursor: isLocked ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: isSmallScreen ? '60px' : '100px',
+                      padding: isSmallScreen ? '6px 4px' : '8px 12px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      backgroundColor: isActive ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                      color: isActive ? 'var(--bg-deep)' : 'var(--text-muted)',
+                      transition: 'all 0.2s',
+                      position: 'relative'
+                    }}
+                  >
+                    <span style={{ fontSize: isSmallScreen ? '0.7rem' : '0.8rem', fontWeight: 'bold' }}>FASE {idx + 1}</span>
+                    {isCompleted && <div style={{ position: 'absolute', top: '-4px', right: '-4px', backgroundColor: 'var(--success)', borderRadius: '50%', width: '12px', height: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg></div>}
+                  </button>
+                )
+              })}
+            </div>
+
+            <div style={{ padding: isSmallScreen ? '6px 10px' : '8px 15px', backgroundColor: 'var(--bg-deep)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '4px', overflowX: 'auto' }}>
+                {(['all', 'media', 'notes', 'text'] as const).map(f => (
+                  <button key={f} onClick={() => setChatFilter(f)} className={`btn btn-sm ${chatFilter === f ? 'btn-primary' : 'btn-ghost'}`} style={{ fontSize: isSmallScreen ? '0.65rem' : '0.7rem', padding: isSmallScreen ? '4px 6px' : '4px 10px', whiteSpace: 'nowrap' }}>
+                    {f === 'all' ? 'Todos' : f === 'media' ? (isSmallScreen ? '📷' : '📷 Multimedia') : f === 'notes' ? (isSmallScreen ? '📝' : '📝 Notas') : (isSmallScreen ? '💬' : '💬 Texto')}
+                  </button>
+                ))}
+              </div>
+              {project.phases.find((p: any) => p.id === activePhase)?.status === 'COMPLETADA' ? (
+                  <span style={{ color: 'var(--success)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+                      Fase Finalizada
+                  </span>
+              ) : (
+                  <button className="btn btn-sm btn-ghost" style={{ color: 'var(--warning)', borderColor: 'var(--warning)', fontSize: '0.75rem' }} onClick={() => handleCompletePhase(activePhase as number)} disabled={loading || !activePhase}>Finalizar Fase √</button>
+              )}
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', padding: isSmallScreen ? '12px 12px 80px 12px' : '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              {filteredChat.length === 0 ? (
+                <div style={{ margin: 'auto', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ opacity: 0.5, marginBottom: '10px' }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  <p>No hay mensajes en esta fase.<br/>Envía el primer mensaje o evidencia.</p>
+                </div>
+              ) : (
+                filteredChat.map((msg: any) => (
+                  <div key={msg.id} className="chat-message" style={{ alignSelf: msg.isMe ? 'flex-end' : 'flex-start', maxWidth: isSmallScreen ? '92%' : '80%', display: 'flex', flexDirection: 'column' }}>
+                    {!msg.isMe && <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'bold', marginBottom: '4px', marginLeft: '12px' }}>{msg.userName}</span>}
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', flexDirection: msg.isMe ? 'row' : 'row-reverse' }}>
+                      {msg.isMe && (
+                        <button
+                          onClick={() => setWaForwardMsg(msg)}
+                          title="Reenviar por WhatsApp"
+                          style={{ background: '#25D366', border: 'none', borderRadius: '50%', width: isSmallScreen ? '24px' : '28px', height: isSmallScreen ? '24px' : '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 1px 4px rgba(37,211,102,0.3)', transition: 'transform 0.15s' }}
+                          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
+                          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                        >
+                          <svg width={isSmallScreen ? "12" : "14"} height={isSmallScreen ? "12" : "14"} viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                        </button>
+                      )}
+                      <div style={{ backgroundColor: msg.type === 'NOTE' ? 'var(--bg-deep)' : (msg.isMe ? 'var(--primary)' : 'var(--bg-surface)'), color: msg.isMe && msg.type !== 'NOTE' ? 'var(--bg-deep)' : 'var(--text)', padding: isSmallScreen ? '8px 12px' : '10px 15px', borderRadius: '16px', fontSize: isSmallScreen ? '0.8rem' : '0.875rem', border: msg.type === 'NOTE' ? '1px solid var(--warning)' : 'none', borderBottomRightRadius: msg.isMe ? '4px' : '12px', borderBottomLeftRadius: msg.isMe ? '12px' : '4px', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+                        {msg.type === 'NOTE' && <div style={{ fontSize: '0.7rem', color: 'var(--warning)', fontWeight: 'bold', marginBottom: '4px', textTransform: 'uppercase' }}>Nota de Avance</div>}
+                        {msg.media && msg.media.length > 0 && (
+                            <div style={{ marginBottom: '8px', borderRadius: '8px', overflow: 'hidden' }}>
+                                {msg.media[0].mimeType.startsWith('image') ? <img src={msg.media[0].url} alt="Evidencia" style={{ width: '100%', display: 'block' }} /> : <video src={msg.media[0].url} controls style={{ width: '100%' }} />}
+                            </div>
+                        )}
+                        {msg.content}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px', alignSelf: msg.isMe ? 'flex-end' : 'flex-start', margin: '0 4px' }}>{mounted ? new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Message Input */}
+            <div style={isSmallScreen ? {
+              padding: '12px 10px', 
+              backgroundColor: 'var(--bg-deep)', 
+              borderTop: '1px solid var(--border-color)', 
+              display: 'flex', 
+              gap: '8px', 
+              alignItems: 'center', 
+              position: 'fixed', 
+              bottom: '64px',
+              left: 0,
+              right: 0,
+              zIndex: 100,
+              boxShadow: '0 -2px 10px rgba(0,0,0,0.2)'
+            } : { 
+              padding: '15px', 
+              backgroundColor: 'var(--bg-deep)', 
+              borderTop: '1px solid var(--border-color)', 
+              display: 'flex', 
+              gap: '8px', 
+              alignItems: 'center', 
+              position: 'sticky', 
+              bottom: 0, 
+              zIndex: 10 
+            }}>
+              <label className="btn btn-ghost" style={{ padding: '10px', color: 'var(--primary)', cursor: 'pointer', flexShrink: 0 }} title="Tomar Foto/Video">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <input type="file" accept="image/*,video/*" capture="environment" style={{ display: 'none' }} onChange={(e) => { const file = e.target.files?.[0]; if (file) handleSendMessage(null as any, '', activePhase as number, file) }} />
+              </label>
+              <form onSubmit={handleSendMessage} style={{ flex: 1, display: 'flex', gap: '8px' }}>
+                <input type="text" className="form-input" placeholder="Escribe un mensaje..." value={message} onChange={e => setMessage(e.target.value)} style={{ flex: 1, fontSize: isSmallScreen ? '0.85rem' : '0.9rem' }} />
+                <button type="submit" className="btn btn-primary" disabled={loading || !message.trim() || !activePhase || project.phases.find((p: any) => p.id === activePhase)?.status === 'COMPLETADA'} style={{ flexShrink: 0 }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* WhatsApp Forward Modal */}
+      {waForwardMsg && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={() => setWaForwardMsg(null)}>
+          <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', width: '100%', maxWidth: '400px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '16px', background: 'linear-gradient(135deg, #25D366, #128C7E)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'white' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                <span style={{ fontWeight: 'bold', fontSize: '1rem' }}>Reenviar por WhatsApp</span>
+              </div>
+              <button onClick={() => setWaForwardMsg(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+            </div>
+
+            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ padding: '10px 14px', backgroundColor: 'var(--bg-deep)', borderRadius: '8px', borderLeft: '3px solid var(--primary)', fontSize: '0.85rem', color: 'var(--text-secondary)', maxHeight: '100px', overflow: 'auto' }}>
+                {waForwardMsg.content || '[Multimedia]'}
+              </div>
+
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: '0' }}>Selecciona la categoría y completa los datos:</p>
+
+              {!waCategory ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {waCategories.map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => { setWaCategory(cat.id); setWaMessage(`${cat.template}\n\n--- Mensaje original ---\n${waForwardMsg.content || '[Multimedia]'}`) }}
+                      style={{ padding: '10px 14px', background: 'var(--bg-deep)', border: '1px solid var(--border)', borderRadius: '10px', cursor: 'pointer', color: 'var(--text)', fontSize: '0.9rem', textAlign: 'left', borderLeft: `4px solid ${cat.color}`, transition: 'all 0.15s' }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--bg-surface)'; e.currentTarget.style.transform = 'translateX(4px)' }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--bg-deep)'; e.currentTarget.style.transform = 'translateX(0)' }}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <button onClick={() => { setWaCategory(''); setWaMessage(''); setWaPhone('') }} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', alignSelf: 'flex-start', fontSize: '0.8rem', padding: 0 }}>← Cambiar categoría</button>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Número de WhatsApp</label>
+                    <input type="tel" className="form-input" placeholder="593967491847" value={waPhone} onChange={e => setWaPhone(e.target.value)} style={{ width: '100%' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Mensaje</label>
+                    <textarea className="form-input" rows={4} value={waMessage} onChange={e => setWaMessage(e.target.value)} style={{ width: '100%', resize: 'vertical' }} />
+                  </div>
+                  <button
+                    onClick={async () => { await handleWaSend(); }}
+                    disabled={waSending || !waPhone.trim() || !waMessage.trim()}
+                    style={{ padding: '12px', background: waSending ? '#128C7E' : '#25D366', color: 'white', border: 'none', borderRadius: '10px', cursor: waSending ? 'wait' : 'pointer', fontWeight: 'bold', fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: (!waPhone.trim() || !waMessage.trim()) ? 0.5 : 1 }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    {waSending ? 'Enviando...' : 'Enviar por WhatsApp'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

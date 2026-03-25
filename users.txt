@@ -1,0 +1,26 @@
+﻿[
+  {
+    "id": 1,
+    "name": "Administrador Aquatech",
+    "email": "admin@aquatech.ec",
+    "phone": "+593 99 123 4567",
+    "role": "ADMIN",
+    "username": "Aquatech",
+    "passwordHash": "$2b$10$kic3pAfeW6HXtxwxdEbKbOfA1Bsqw4nLR7Q7MGCEePpBxNlQhqnBG",
+    "isActive": true,
+    "createdAt": "2026-03-23T23:17:18.100Z",
+    "updatedAt": "2026-03-23T23:27:36.530Z"
+  },
+  {
+    "id": 5,
+    "name": "Prueba",
+    "email": "automatizotunegocio@gmail.com",
+    "phone": "593967491847",
+    "role": "OPERATOR",
+    "username": "Prueba",
+    "passwordHash": "$2b$10$126yrMXpG3NOfb61C.umR.J7ELgAZOX6ulcn0RiPFL/J5aR7c0pN2",
+    "isActive": true,
+    "createdAt": "2026-03-24T20:53:26.444Z",
+    "updatedAt": "2026-03-24T20:53:26.444Z"
+  }
+]

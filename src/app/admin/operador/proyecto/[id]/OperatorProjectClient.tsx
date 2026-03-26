@@ -39,14 +39,32 @@ export default function OperatorProjectClient({
        try {
          await db.outbox.update(item.id!, { status: 'syncing' })
          let endpoint = ''
-         if (item.type === 'MESSAGE') endpoint = `/api/projects/${project.id}/messages`
-         else if (item.type === 'EXPENSE') endpoint = `/api/projects/${project.id}/expenses`
+         let method = 'POST'
+         
+         if (item.type === 'MESSAGE' || item.type === 'MEDIA_UPLOAD') {
+           endpoint = `/api/projects/${project.id}/messages`
+         } else if (item.type === 'EXPENSE') {
+           endpoint = `/api/projects/${project.id}/expenses`
+         } else if (item.type === 'DAY_START') {
+           endpoint = `/api/day-records`
+         } else if (item.type === 'DAY_END') {
+           endpoint = `/api/day-records`
+           method = 'PUT'
+         } else if (item.type === 'PHASE_COMPLETE') {
+           endpoint = `/api/projects/${project.id}/phases/${item.payload.phaseId}`
+           method = 'PATCH'
+         }
          
          if (endpoint) {
             const res = await fetch(endpoint, {
-                method: 'POST',
+                method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...item.payload, lat: item.lat, lng: item.lng, createdAt: new Date(item.timestamp).toISOString() })
+                body: JSON.stringify({ 
+                  ...item.payload, 
+                  lat: item.lat, 
+                  lng: item.lng, 
+                  createdAt: new Date(item.timestamp).toISOString() 
+                })
             })
             if (res.ok) await db.outbox.delete(item.id!)
             else await db.outbox.update(item.id!, { status: 'failed' })
@@ -156,32 +174,64 @@ export default function OperatorProjectClient({
   const handleDayRecord = async () => {
     setLoading(true)
     try {
+      // get location
+      let location = null
+      if ('geolocation' in navigator) {
+        try {
+          location = await new Promise<any>((resolve) => {
+            navigator.geolocation.getCurrentPosition(
+              pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+              () => resolve(null)
+            )
+          })
+        } catch(e) {}
+      }
+
       if (activeRecord) {
+        const payload = { recordId: activeRecord.id, projectId: project.id }
         // End Day
+        if (!navigator.onLine) {
+          await db.outbox.add({
+            type: 'DAY_END',
+            projectId: project.id,
+            payload,
+            timestamp: Date.now(),
+            lat: location?.lat,
+            lng: location?.lng,
+            status: 'pending'
+          })
+          router.refresh() // local feedback
+          setLoading(false)
+          return
+        }
+
         await fetch('/api/day-records', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ recordId: activeRecord.id, projectId: project.id })
+          body: JSON.stringify(payload)
         })
       } else {
+        const payload = { projectId: project.id, location }
         // Start Day
-        // get location
-        let location = null
-        if ('geolocation' in navigator) {
-          try {
-            location = await new Promise((resolve) => {
-              navigator.geolocation.getCurrentPosition(
-                pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-                () => resolve(null) // ignore errors for now, we don't want to block
-              )
-            })
-          } catch(e) {}
+        if (!navigator.onLine) {
+          await db.outbox.add({
+            type: 'DAY_START',
+            projectId: project.id,
+            payload,
+            timestamp: Date.now(),
+            lat: location?.lat,
+            lng: location?.lng,
+            status: 'pending'
+          })
+          router.refresh()
+          setLoading(false)
+          return
         }
-        
+
         await fetch('/api/day-records', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ projectId: project.id, location })
+          body: JSON.stringify(payload)
         })
       }
       router.refresh()
@@ -207,13 +257,34 @@ export default function OperatorProjectClient({
         })
       }
 
+      const payload = { 
+        amount: Number(amount), 
+        description, 
+        date: new Date().toISOString()
+      }
+
+      if (!navigator.onLine) {
+        await db.outbox.add({
+          type: 'EXPENSE',
+          projectId: project.id,
+          payload,
+          timestamp: Date.now(),
+          lat: location?.lat,
+          lng: location?.lng,
+          status: 'pending'
+        })
+        setExpenseForm(false)
+        setAmount('')
+        setDescription('')
+        setLoading(false)
+        return
+      }
+
       await fetch(`/api/projects/${project.id}/expenses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          amount: Number(amount), 
-          description, 
-          date: new Date().toISOString(),
+          ...payload,
           lat: location?.lat,
           lng: location?.lng
         })
@@ -233,10 +304,26 @@ export default function OperatorProjectClient({
     if (!confirm("¿Seguro que deseas marcar esta fase como terminada? Esto desbloqueará la siguiente.")) return
     setLoading(true)
     try {
+      const payload = { status: 'COMPLETADA', phaseId }
+      if (!navigator.onLine) {
+        await db.outbox.add({
+          type: 'PHASE_COMPLETE',
+          projectId: project.id,
+          payload,
+          timestamp: Date.now(),
+          lat: null,
+          lng: null,
+          status: 'pending'
+        })
+        router.refresh()
+        setLoading(false)
+        return
+      }
+
       await fetch(`/api/projects/${project.id}/phases/${phaseId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'COMPLETADA' })
+        body: JSON.stringify(payload)
       })
       router.refresh()
     } catch (e) {
@@ -344,20 +431,39 @@ export default function OperatorProjectClient({
         })
       }
 
+      const payload = { 
+        phaseId: activePhase || project.phases[0]?.id, 
+        content: '', 
+        type: file.type,
+        media: {
+          url: file.url,
+          filename: file.filename,
+          mimeType: file.mimeType
+        }
+      }
+
+      if (!navigator.onLine) {
+        await db.outbox.add({
+          type: 'MEDIA_UPLOAD',
+          projectId: project.id,
+          payload,
+          timestamp: Date.now(),
+          lat: location?.lat,
+          lng: location?.lng,
+          status: 'pending'
+        })
+        router.refresh() // Show as pending in chat if desired (handled by combinedChat)
+        setLoading(false)
+        return
+      }
+
       await fetch(`/api/projects/${project.id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          phaseId: activePhase || project.phases[0]?.id, 
-          content: '', 
-          type: file.type,
+          ...payload,
           lat: location?.lat,
-          lng: location?.lng,
-          media: {
-            url: file.url,
-            filename: file.filename,
-            mimeType: file.mimeType
-          }
+          lng: location?.lng
         })
       })
       router.refresh()
@@ -387,20 +493,20 @@ export default function OperatorProjectClient({
   const combinedChat = [
     ...initialChat,
     ...pendingItems
-      .filter((item: any) => item.type === 'MESSAGE')
+      .filter((item: any) => item.type === 'MESSAGE' || item.type === 'MEDIA_UPLOAD')
       .map((item: any) => ({
         id: `pending-${item.id}`,
         projectId: item.projectId,
         userId: userId,
         userName: 'Yo (Pendiente)',
-        content: item.payload.content,
+        content: item.payload.content || (item.type === 'MEDIA_UPLOAD' ? '[Archivo]' : ''),
         type: item.payload.type,
         createdAt: new Date(item.timestamp).toISOString(),
         isMe: true,
         isPending: true,
         lat: item.lat,
         lng: item.lng,
-        media: item.payload.media ? [{ url: item.payload.media.base64, filename: item.payload.media.filename, mimeType: item.payload.media.mimeType }] : []
+        media: item.payload.media ? [{ url: item.payload.media.url || item.payload.media.base64, filename: item.payload.media.filename, mimeType: item.payload.media.mimeType }] : []
       }))
   ].sort((a,b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
 
@@ -411,6 +517,20 @@ export default function OperatorProjectClient({
     if (chatFilter === 'text') return msg.type === 'TEXT' && (!msg.media || msg.media.length === 0)
     return true
   })
+
+  const pendingExpenses = pendingItems
+    .filter((item: any) => item.type === 'EXPENSE')
+    .map((item: any) => ({
+      id: `pending-exp-${item.id}`,
+      amount: item.payload.amount,
+      description: item.payload.description,
+      date: new Date(item.timestamp).toISOString(),
+      isPending: true
+    }))
+
+  const allExpenses = [...expenses, ...pendingExpenses].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  
+  const pendingDayAction = pendingItems.find((item: any) => item.type === 'DAY_START' || item.type === 'DAY_END')
 
   return (
     <div style={{ padding: isSmallScreen ? '5px 10px 0 10px' : '0', minHeight: isSmallScreen ? 'calc(100vh - 128px)' : 'auto', display: 'flex', flexDirection: 'column' }}>
@@ -424,6 +544,7 @@ export default function OperatorProjectClient({
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.7rem', color: isOnline ? 'var(--success)' : 'var(--warning)', backgroundColor: 'var(--bg-deep)', padding: '2px 8px', borderRadius: '12px', border: '1px solid currentColor' }}>
                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'currentColor' }}></div>
                {isOnline ? 'EN LÍNEA' : 'MODO OFFLINE'}
+               {pendingItems.length > 0 && <span style={{ marginLeft: '5px', color: 'var(--warning)', fontWeight: 'bold' }}>({pendingItems.length} pendientes)</span>}
             </div>
             <h1 style={{ fontSize: isSmallScreen ? '1.4rem' : '1.8rem', margin: 0, color: 'var(--text)', fontWeight: 'bold' }}>{project.title}</h1>
           </div>
@@ -475,15 +596,15 @@ export default function OperatorProjectClient({
                   Registra tu hora de entrada y salida para contabilizar tus horas en obra.
                 </p>
                 <button 
-                  className={`btn btn-lg btn-full ${activeRecord ? 'btn-danger' : 'btn-primary'}`} 
+                  className={`btn btn-lg btn-full ${activeRecord || (pendingDayAction && pendingDayAction.type === 'DAY_START') ? 'btn-danger' : 'btn-primary'}`} 
                   onClick={handleDayRecord}
                   disabled={loading}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
                 >
-                  {loading ? 'Cargando...' : activeRecord ? (
+                  {loading ? 'Cargando...' : (activeRecord || (pendingDayAction && pendingDayAction.type === 'DAY_START')) ? (
                     <>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
-                      Terminar Jornada
+                      {pendingDayAction?.type === 'DAY_START' ? 'Fichar Salida (Pendiente)' : 'Terminar Jornada'}
                     </>
                   ) : (
                     <>
@@ -492,9 +613,13 @@ export default function OperatorProjectClient({
                     </>
                   )}
                 </button>
-                {activeRecord && mounted && (
-                  <p style={{ textAlign: 'center', color: 'var(--warning)', marginTop: '15px', fontWeight: 'bold' }}>
-                    Día en progreso desde las {new Date(activeRecord.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                {(activeRecord || pendingDayAction) && mounted && (
+                  <p style={{ textAlign: 'center', color: 'var(--warning)', marginTop: '15px', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                    {pendingDayAction ? (
+                      `Acción offline: ${pendingDayAction.type === 'DAY_START' ? 'Inicio en cola' : 'Fin en cola'}`
+                    ) : (
+                      `Día en progreso desde las ${new Date(activeRecord.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`
+                    )}
                   </p>
                 )}
               </div>
@@ -521,17 +646,22 @@ export default function OperatorProjectClient({
                   </form>
                 )}
 
-                {expenses.length === 0 && !expenseForm ? (
+                {allExpenses.length === 0 && !expenseForm ? (
                   <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: '20px 0' }}>No has registrado gastos en este proyecto hoy.</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {expenses.map((e: any) => (
-                      <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', backgroundColor: 'var(--bg-deep)', borderRadius: '6px' }}>
+                    {allExpenses.map((e: any) => (
+                      <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', backgroundColor: 'var(--bg-deep)', borderRadius: '6px', borderLeft: e.isPending ? '3px solid var(--warning)' : 'none' }}>
                         <div>
-                          <span style={{ display: 'block', color: 'var(--text)' }}>{e.description}</span>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{mounted ? new Date(e.date).toLocaleDateString() : ''}</span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--text)' }}>
+                            {e.description}
+                            {e.isPending && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
+                          </span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            {e.isPending ? 'Pendiente de sincronizar' : (mounted ? new Date(e.date).toLocaleDateString() : '')}
+                          </span>
                         </div>
-                        <span style={{ fontWeight: 'bold', color: 'var(--warning)' }}>$ {e.amount.toFixed(2)}</span>
+                        <span style={{ fontWeight: 'bold', color: e.isPending ? 'var(--warning)' : 'var(--text)' }}>$ {e.amount.toFixed(2)}</span>
                       </div>
                     ))}
                   </div>

@@ -1,0 +1,55 @@
+﻿Ôû▓ Next.js 16.2.1 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+Ô£ô Compiled successfully in 10.6s
+  Running TypeScript ...
+  Finished TypeScript in 10.8s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/17) ...
+  Generating static pages using 7 workers (4/17) 
+  Generating static pages using 7 workers (8/17) 
+  Generating static pages using 7 workers (12/17) 
+Ô£ô Generating static pages using 7 workers (17/17) in 683ms
+  Finalizing page optimization ...
+
+Route (app)
+Ôöî Ôùï /
+Ôö£ Ôùï /_not-found
+Ôö£ ãÆ /admin
+Ôö£ Ôùï /admin/cotizacion-rapida
+Ôö£ ãÆ /admin/cotizaciones
+Ôö£ ãÆ /admin/cotizaciones/compuesto/[id]
+Ôö£ ãÆ /admin/cotizaciones/materiales
+Ôö£ ãÆ /admin/cotizaciones/nuevo
+Ôö£ Ôùï /admin/login
+Ôö£ ãÆ /admin/operador
+Ôö£ ãÆ /admin/operador/proyecto/[id]
+Ôö£ ãÆ /admin/proyectos
+Ôö£ ãÆ /admin/proyectos/[id]
+Ôö£ ãÆ /admin/proyectos/[id]/bitacora
+Ôö£ Ôùï /admin/proyectos/nuevo
+Ôö£ Ôùï /admin/recursos
+Ôö£ ãÆ /admin/reportes
+Ôö£ Ôùï /admin/team
+Ôö£ ãÆ /api/auth/[...nextauth]
+Ôö£ ãÆ /api/clients
+Ôö£ ãÆ /api/day-records
+Ôö£ ãÆ /api/materials
+Ôö£ ãÆ /api/materials/[id]
+Ôö£ ãÆ /api/projects
+Ôö£ ãÆ /api/projects/[id]/expenses
+Ôö£ ãÆ /api/projects/[id]/messages
+Ôö£ ãÆ /api/projects/[id]/phases/[phaseId]
+Ôö£ ãÆ /api/projects/[id]/team
+Ôö£ ãÆ /api/quotes
+Ôö£ ãÆ /api/upload
+Ôö£ ãÆ /api/users
+Ôöö ãÆ /api/whatsapp/send
+
+
+ãÆ Proxy (Middleware)
+
+Ôùï  (Static)   prerendered as static content
+ãÆ  (Dynamic)  server-rendered on demand
+

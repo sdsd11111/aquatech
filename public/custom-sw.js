@@ -1,7 +1,7 @@
 // ============================================================
 // Aquatech CRM — Custom Service Worker (Offline-First) v14
 // ============================================================
-const CACHE_VERSION = 'v14';
+const CACHE_VERSION = 'v15';
 const STATIC_CACHE = `aquatech-static-${CACHE_VERSION}`;
 const PAGES_CACHE  = `aquatech-pages-${CACHE_VERSION}`;
 const ASSETS_CACHE = `aquatech-assets-${CACHE_VERSION}`;
@@ -17,7 +17,7 @@ const PRE_CACHE = [
 
 // ─── INSTALL ────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
-  console.log('[SW v14] Installing...');
+  console.log('[SW v15] Installing...');
   event.waitUntil(
     caches.open(STATIC_CACHE)
       .then(cache => cache.addAll(PRE_CACHE))
@@ -27,7 +27,7 @@ self.addEventListener('install', (event) => {
 
 // ─── ACTIVATE ───────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
-  console.log('[SW v14] Activating...');
+  console.log('[SW v15] Activating...');
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
@@ -190,7 +190,9 @@ async function rscNetworkFirst(request) {
 
 /**
  * Navigation handler — for full page loads (first visit, refresh).
- * Try network → cache → offline.html
+ * Try network → PAGES_CACHE only → offline.html
+ * IMPORTANT: We ONLY search PAGES_CACHE here, never RSC_CACHE or ASSETS_CACHE,
+ * because RSC payloads are NOT valid HTML and would render as raw text.
  */
 async function navigationHandler(request) {
   try {
@@ -201,8 +203,10 @@ async function navigationHandler(request) {
     }
     return response;
   } catch (e) {
-    // Try cache with ignoreVary to handle any header differences
-    const cached = await caches.match(request, { ignoreVary: true });
+    // ONLY search PAGES_CACHE — never global caches.match() which would 
+    // return RSC payloads from RSC_CACHE and display raw JSON text
+    const pagesCache = await caches.open(PAGES_CACHE);
+    const cached = await pagesCache.match(request, { ignoreVary: true });
     if (cached) return cached;
 
     // Nothing in cache → show offline page

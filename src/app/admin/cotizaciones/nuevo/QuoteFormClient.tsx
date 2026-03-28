@@ -231,7 +231,7 @@ export default function QuoteFormClient({ clients, materials, prefetchedProject 
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '2.5fr 1fr', gap: '20px', alignItems: 'start' }}>
+    <form onSubmit={handleSubmit} className="quote-form-layout">
       
       <div style={{ display: 'grid', gap: '20px' }}>
         {/* Client Box */}
@@ -281,7 +281,7 @@ export default function QuoteFormClient({ clients, materials, prefetchedProject 
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+          <div className="quote-client-fields">
             {!isNewClient ? (
               <div className="form-group">
                 <label>Seleccionar Cliente Existente</label>
@@ -326,7 +326,7 @@ export default function QuoteFormClient({ clients, materials, prefetchedProject 
               <label>Teléfono</label>
               <input className="form-input" value={clientData.phone} onChange={e => setClientData({...clientData, phone: e.target.value})} />
             </div>
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
+            <div className="form-group quote-full-width">
               <label>Dirección</label>
               <input className="form-input" value={clientData.address} onChange={e => setClientData({...clientData, address: e.target.value})} />
             </div>
@@ -375,7 +375,7 @@ export default function QuoteFormClient({ clients, materials, prefetchedProject 
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                   Añadir Concepto GLOBAL (Servicios)
                 </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '10px', alignItems: 'end' }}>
+                <div className="quote-global-fields">
                   <div className="form-group" style={{ margin: 0 }}>
                     <label style={{ fontSize: '0.7rem' }}>Descripción</label>
                     <input className="form-input-sm" value={globalDescription} onChange={e => setGlobalDescription(e.target.value)} placeholder="Ej: Construcción de Piscina" />
@@ -593,6 +593,8 @@ export default function QuoteFormClient({ clients, materials, prefetchedProject 
           border-radius: 4px;
           color: var(--text-main);
           outline: none;
+          width: 100%;
+          padding: 6px 8px;
         }
         .form-input-sm:focus {
           border-color: var(--primary);
@@ -600,6 +602,40 @@ export default function QuoteFormClient({ clients, materials, prefetchedProject 
         @keyframes slideUp {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        .quote-form-layout {
+          display: grid;
+          grid-template-columns: 2.5fr 1fr;
+          gap: 20px;
+          align-items: start;
+        }
+        .quote-client-fields {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 15px;
+        }
+        .quote-full-width {
+          grid-column: span 2;
+        }
+        .quote-global-fields {
+          display: grid;
+          grid-template-columns: 2fr 1fr 1fr;
+          gap: 10px;
+          align-items: end;
+        }
+        @media (max-width: 768px) {
+          .quote-form-layout {
+            grid-template-columns: 1fr;
+          }
+          .quote-client-fields {
+            grid-template-columns: 1fr;
+          }
+          .quote-full-width {
+            grid-column: span 1;
+          }
+          .quote-global-fields {
+            grid-template-columns: 1fr;
+          }
         }
      `}</style>
     </form>

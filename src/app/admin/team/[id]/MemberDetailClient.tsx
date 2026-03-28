@@ -8,7 +8,7 @@ import {
   Clock, ArrowLeft, MapPin, Image as ImageIcon, Activity
 } from 'lucide-react'
 
-type TabType = 'ACTIVIDAD' | 'GASTOS' | 'ASISTENCIA' | 'PROYECTOS'
+type TabType = 'RESUMEN' | 'BITACORA' | 'GASTOS' | 'ENTRADA_SALIDA' | 'PROYECTOS'
 
 export default function MemberDetailClient() {
   const params = useParams()
@@ -62,9 +62,12 @@ export default function MemberDetailClient() {
     if (!activityData?.timeline) return []
     
     let logs = activityData.timeline
-    if (activeTab === 'ACTIVIDAD') logs = logs.filter((l: any) => l.type === 'CHAT_MESSAGE')
+    if (activeTab === 'BITACORA') logs = logs.filter((l: any) => l.type === 'CHAT_MESSAGE' || l.type === 'PROJECT')
     if (activeTab === 'GASTOS') logs = logs.filter((l: any) => l.type === 'EXPENSE')
-    if (activeTab === 'ASISTENCIA') logs = logs.filter((l: any) => l.type === 'ATTENDANCE')
+    if (activeTab === 'ENTRADA_SALIDA') logs = logs.filter((l: any) => l.type === 'ATTENDANCE')
+    // RESUMEN doesn't filter by type, showing all logs including QUOTES
+
+    
     
     if (monthFilter !== 'ALL') {
       logs = logs.filter((l: any) => {
@@ -132,14 +135,14 @@ export default function MemberDetailClient() {
 
         <div 
           className="kpi-card" 
-          onClick={() => setActiveTab('ACTIVIDAD')}
-          style={{ cursor: 'pointer', border: activeTab === 'ACTIVIDAD' ? '1px solid var(--primary)' : undefined }}
+          onClick={() => setActiveTab('BITACORA')}
+          style={{ cursor: 'pointer', border: activeTab === 'BITACORA' ? '1px solid var(--primary)' : undefined }}
         >
           <div className="kpi-icon" style={{ backgroundColor: 'var(--info-bg)', color: 'var(--info)' }}>
             <MessageSquare size={22} />
           </div>
           <div className="kpi-value">{member.stats.totalMessages}</div>
-          <div className="kpi-label">Reportes de Campo</div>
+          <div className="kpi-label">Reportes (Bitácora)</div>
         </div>
 
         <div 
@@ -156,22 +159,60 @@ export default function MemberDetailClient() {
 
         <div 
           className="kpi-card" 
-          onClick={() => setActiveTab('ASISTENCIA')}
-          style={{ cursor: 'pointer', border: activeTab === 'ASISTENCIA' ? '1px solid var(--primary)' : undefined }}
+          onClick={() => setActiveTab('ENTRADA_SALIDA')}
+          style={{ cursor: 'pointer', border: activeTab === 'ENTRADA_SALIDA' ? '1px solid var(--primary)' : undefined }}
         >
           <div className="kpi-icon" style={{ backgroundColor: 'var(--danger-bg)', color: 'var(--danger)' }}>
             <Clock size={22} />
           </div>
           <div className="kpi-value">{member.stats.totalDayRecords}</div>
-          <div className="kpi-label">Días Trabajados</div>
+          <div className="kpi-label">Logística (Entrada/Salida)</div>
         </div>
       </div>
 
-      {/* 3. DYNAMIC METRIC SECTION */}
-      <div className="card" style={{ marginTop: 'var(--space-2xl)' }}>
+      {/* 3. TABS NAVIGATION */}
+      <div className="tabs" style={{ marginTop: 'var(--space-2xl)', marginBottom: 'var(--space-lg)' }}>
+        <button 
+          className={`tab ${activeTab === 'PROYECTOS' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('PROYECTOS')}
+        >
+          Proyectos
+        </button>
+        <button 
+          className={`tab ${activeTab === 'RESUMEN' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('RESUMEN')}
+        >
+          Resumen General
+        </button>
+        <button 
+          className={`tab ${activeTab === 'BITACORA' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('BITACORA')}
+        >
+          Bitácora
+        </button>
+        <button 
+          className={`tab ${activeTab === 'GASTOS' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('GASTOS')}
+        >
+          Gastos
+        </button>
+        <button 
+          className={`tab ${activeTab === 'ENTRADA_SALIDA' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('ENTRADA_SALIDA')}
+        >
+          Entrada/Salida
+        </button>
+      </div>
+
+      {/* 4. DYNAMIC METRIC SECTION */}
+      <div className="card">
         <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
             <h2 className="card-title" style={{ margin: 0 }}>
-               {activeTab === 'PROYECTOS' ? 'Historial de Proyectos Asignados' : `Registros Detallados: ${activeTab}`}
+               {activeTab === 'PROYECTOS' ? 'Historial de Proyectos Asignados' : 
+                activeTab === 'RESUMEN' ? 'Resumen de Toda la Actividad' :
+                activeTab === 'BITACORA' ? 'Bitácora de Reportes de Campo' :
+                activeTab === 'GASTOS' ? 'Registro Detallado de Gastos' :
+                'Registros de Entrada y Salida'}
             </h2>
             
             {activeTab !== 'PROYECTOS' && availableMonths.length > 0 && (
@@ -274,20 +315,89 @@ export default function MemberDetailClient() {
                           </div>
                         )}
 
-                        {/* Event Body: ATTENDANCE */}
+                        {/* Event Body: ATTENDANCE (ENTRADA / SALIDA) */}
                         {event.type === 'ATTENDANCE' && (
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--space-md)' }}>
-                            <div style={{ textAlign: 'center', backgroundColor: 'var(--success-bg)', padding: 'var(--space-sm)', borderRadius: 'var(--radius-sm)' }}>
-                                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--success)', fontWeight: 'bold' }}>ENTRADA</span>
-                                <strong style={{ fontSize: '1.2rem', color: 'var(--text)' }}>{new Date(event.data.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-lg)' }}>
+                            <div style={{ 
+                              padding: 'var(--space-md)', 
+                              backgroundColor: 'var(--success-bg)', 
+                              borderRadius: 'var(--radius-md)',
+                              position: 'relative',
+                              overflow: 'hidden'
+                            }}>
+                                <div style={{ position: 'absolute', top: '-10px', right: '-10px', opacity: 0.1, color: 'var(--success)' }}>
+                                  <Clock size={60} />
+                                </div>
+                                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--success)', fontWeight: 'bold', marginBottom: '8px', letterSpacing: '1px' }}>LOGÍSTICA: ENTRADA / LLEGADA</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                    <strong style={{ fontSize: '1.6rem', color: 'var(--text)' }}>
+                                      {new Date(event.data.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </strong>
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                      {new Date(event.data.startTime).toLocaleDateString()}
+                                    </div>
+                                </div>
+                                {event.data.startLat ? (
+                                  <a href={`https://www.google.com/maps?q=${event.data.startLat},${event.data.startLng}`} 
+                                     target="_blank" rel="noreferrer" 
+                                     className="btn btn-ghost btn-sm" 
+                                     style={{ marginTop: '12px', width: '100%', justifyContent: 'center', border: '1px solid var(--success)', color: 'var(--success)' }}>
+                                    <MapPin size={14} style={{ marginRight: '6px' }}/> Ubicación de Entrada
+                                  </a>
+                                ) : (
+                                  <div style={{ fontSize: '0.7rem', color: 'var(--danger)', marginTop: '8px' }}>⚠️ Sin metadatos GPS</div>
+                                )}
                             </div>
-                            <div style={{ textAlign: 'center', backgroundColor: 'var(--warning-bg)', padding: 'var(--space-sm)', borderRadius: 'var(--radius-sm)' }}>
-                                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--warning)', fontWeight: 'bold' }}>SALIDA</span>
-                                <strong style={{ fontSize: '1.2rem', color: 'var(--text)' }}>{event.data.endTime ? new Date(event.data.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</strong>
+                            
+                            <div style={{ 
+                              padding: 'var(--space-md)', 
+                              backgroundColor: 'var(--warning-bg)', 
+                              borderRadius: 'var(--radius-md)',
+                              position: 'relative',
+                              overflow: 'hidden'
+                            }}>
+                                <div style={{ position: 'absolute', top: '-10px', right: '-10px', opacity: 0.1, color: 'var(--warning)' }}>
+                                  <Clock size={60} />
+                                </div>
+                                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--warning)', fontWeight: 'bold', marginBottom: '8px', letterSpacing: '1px' }}>LOGÍSTICA: SALIDA / RETIRO</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                    <strong style={{ fontSize: '1.6rem', color: 'var(--text)' }}>
+                                      {event.data.endTime ? new Date(event.data.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                    </strong>
+                                    {event.data.endTime && (
+                                      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                        {new Date(event.data.endTime).toLocaleDateString()}
+                                      </div>
+                                    )}
+                                </div>
+                                {event.data.endLat ? (
+                                  <a href={`https://www.google.com/maps?q=${event.data.endLat},${event.data.endLng}`} 
+                                     target="_blank" rel="noreferrer" 
+                                     className="btn btn-ghost btn-sm" 
+                                     style={{ marginTop: '12px', width: '100%', justifyContent: 'center', border: '1px solid var(--warning)', color: 'var(--warning)' }}>
+                                    <MapPin size={14} style={{ marginRight: '6px' }}/> Ubicación de Salida
+                                  </a>
+                                ) : (
+                                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                    {event.data.endTime ? '⚠️ GPS no registrado al momento de salida' : '⏳ Operación en curso...'}
+                                  </div>
+                                )}
                             </div>
-                            <div style={{ textAlign: 'center', backgroundColor: 'var(--info-bg)', padding: 'var(--space-sm)', borderRadius: 'var(--radius-sm)' }}>
-                                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--info)', fontWeight: 'bold' }}>DURACIÓN</span>
-                                <strong style={{ fontSize: '1.2rem', color: 'var(--text)' }}>
+
+                            {/* Duration Card */}
+                            <div style={{ 
+                              padding: 'var(--space-md)', 
+                              backgroundColor: 'var(--info-bg)', 
+                              borderRadius: 'var(--radius-md)',
+                              position: 'relative',
+                              overflow: 'hidden',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: 'center',
+                              alignItems: 'center'
+                            }}>
+                                <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--info)', fontWeight: 'bold', marginBottom: '8px', letterSpacing: '1px' }}>DURACIÓN TOTAL</span>
+                                <strong style={{ fontSize: '1.6rem', color: 'var(--text)' }}>
                                     {event.data.endTime ? (
                                         (() => {
                                             const diff = new Date(event.data.endTime).getTime() - new Date(event.data.startTime).getTime();
@@ -304,11 +414,18 @@ export default function MemberDetailClient() {
                         )}
 
                         {/* Event Body: EXPENSE */}
-                        {(event.type === 'EXPENSE' || event.type === 'GASTOS') && (
+                        {event.type === 'EXPENSE' && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                              <div>
                                 <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: 'var(--text)' }}>{event.data.description || 'Gasto no descrito'}</h4>
-                                <span className="badge badge-neutral">{event.data.category}</span>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                  <span className="badge badge-neutral">{event.data.category}</span>
+                                  {event.data.lat && (
+                                    <a href={`https://www.google.com/maps?q=${event.data.lat},${event.data.lng}`} target="_blank" rel="noreferrer" className="badge badge-info" style={{ textDecoration: 'none' }}>
+                                      📍 Ver GPS
+                                    </a>
+                                  )}
+                                </div>
                              </div>
                              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                 <span style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--success)' }}>
@@ -320,6 +437,31 @@ export default function MemberDetailClient() {
                                     </a>
                                 )}
                              </div>
+                          </div>
+                        )}
+
+                        {/* Event Body: PROJECT */}
+                        {event.type === 'PROJECT' && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: 'var(--text)' }}>Nuevo Proyecto Creado</h4>
+                              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>El operador inició la gestión de este proyecto.</p>
+                            </div>
+                            <span className="badge badge-success">{event.data.status}</span>
+                          </div>
+                        )}
+
+                        {/* Event Body: QUOTE */}
+                        {event.type === 'QUOTE' && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: 'var(--text)' }}>Presupuesto Generado</h4>
+                              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>Totalización y envío de cotización profesional.</p>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--warning)' }}>${Number(event.data.totalAmount).toFixed(2)}</div>
+                              <span className="badge badge-warning">{event.data.status}</span>
+                            </div>
                           </div>
                         )}
                       </div>

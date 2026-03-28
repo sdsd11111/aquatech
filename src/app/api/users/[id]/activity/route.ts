@@ -17,7 +17,7 @@ export async function GET(
     const userId = Number(id)
 
     // Parallel fetch for all activity types
-    const [chatMessages, expenses, dayRecords] = await Promise.all([
+    const [chatMessages, expenses, dayRecords, projects, quotes] = await Promise.all([
       prisma.chatMessage.findMany({
         where: { userId },
         include: { 
@@ -41,6 +41,16 @@ export async function GET(
           project: { select: { title: true } }
         },
         orderBy: { startTime: 'desc' },
+        take: 50
+      }),
+      prisma.project.findMany({
+        where: { createdBy: userId },
+        orderBy: { createdAt: 'desc' },
+        take: 50
+      }),
+      prisma.quote.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
         take: 50
       })
     ])
@@ -72,6 +82,24 @@ export async function GET(
         timestamp: rec.startTime,
         projectTitle: rec.project.title,
         data: rec
+      })
+    })
+
+    projects.forEach(proj => {
+      timeline.push({
+        type: 'PROJECT',
+        timestamp: proj.createdAt,
+        projectTitle: proj.title,
+        data: proj
+      })
+    })
+
+    quotes.forEach(quote => {
+      timeline.push({
+        type: 'QUOTE',
+        timestamp: quote.createdAt,
+        projectTitle: `Cotización #${quote.id}`,
+        data: quote
       })
     })
 

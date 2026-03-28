@@ -1,6 +1,47 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+// Global constants for branding parity
+const AQUATECH_BLUE: [number, number, number] = [0, 112, 192];
+const AQUATECH_LOGO_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAA7ARUDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9U6ZJIsKF3YIijJZjgAetPr5x/b6+Mx+Df7N/iCa1uPJ1vXANG0/acMGlBEjj/djDnPrirhF1JKK6kVJqnFyfQ8r1j/grR8LtL1S/s4/DviS/S1nkhW5gih2TBWI3rmTODjIz2NfY3gfxhp3xA8H6L4l0iXz9L1a0jvbeTvsdQwB9CM4I9Qa/nNUbcKOwr9Zf+CUPxj/4Sz4R6t4BvZ92oeF7jybVWOSbOYllA9lkDj6MtexjMFCjTU6fTc8bB42Vao4T+R901U1TVrPRrCa9vrmKztIV3STzMFRB6kmrLMFUkkADkk18C/tFfGi6+Jnim40+zuGTw1YSmOCFThZ3Xgyt689PQfWjKcrqZrX9nF2itW+3/BODiPiCjw/hfbTXNOWkY93/AJLqe8eKv2zPCGi3TwaTZXuvlTjzogIoj9C3JH4Vjad+3Fo8swW+8MX1tETzJBOkhH4HFeFfC34C+J/iwjXWnRxWOlo2xtQvCQhYdQgHLEe3HvXa+J/2NPF2i6fJdabf2OuPGNxtYg0UrY/u7uD9M19tPLeHsNP6tWqe/wCr/TRH5VTzzjLG0/ruHpfu90lFaryv7z+R9W/D74reGfiZZNNoWpJcyxjMtq42TRf7yHnHuOK68HdX5daRrGreC9fivbCefTNWspCN3KujA8qw9OxBr9CPgr8ToPir4HtdXVFhvUPkXlup4jmA5x7Hgj2NfNZ3kTyy1ak+am/w/rufc8K8WrPHLC4mPJWj06NdbdmuqPE/j1/wUL8Efs+/E3UPBOt6Brt/qNnDDM89ikRiIkQOoG5weAeeK9A/Zj/am8O/tSaNrupeHdM1LTIdJuUtZl1JUDOzJuBXax4x61+Yf/BTP/k8DxN/14WH/pOtfT//AAR7/wClf/Ef/sLW3/og15VXC044VVVvofX08TUlinRe2p9TftLftMaB+zB4V0vX/EOm6hqVrf3v2GOPTVQur7GfJ3MBjCmvLPgr/wAFHPAnxy+J2jeCdH8Pa/ZajqZkEU94kIiXZGzndtcnop7Vwf8AwV5/5In4O/7GAf8ApPLXxd/wTx/5O/8AAP8Av3X/AKTS06OFpzwzqvfUVbFVIYlUo7Ox+4Nec/H345aB+zv8OLvxl4jS4nsoJY7eO1tApmnkdsKiBiBnGTyeimvRe1fld/Vv/Wk4xMvMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfM9/9k=';
+
+// Adds the professional Aquatech header to any jsPDF instance
+export function addAquatechHeader(doc: jsPDF, title: string, subtitle: string) {
+  // 1. Logo
+  try {
+    doc.addImage(AQUATECH_LOGO_B64, 'JPEG', 15, 10, 50, 14);
+  } catch (e) {
+    doc.setTextColor(AQUATECH_BLUE[0], AQUATECH_BLUE[1], AQUATECH_BLUE[2]);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.text('AQUATECH', 15, 20);
+  }
+
+  // 2. Fiscal Info (Top Right)
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.1);
+  doc.roundedRect(120, 10, 75, 25, 2, 2);
+  
+  doc.setTextColor(0);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('RUC: 1105048852001', 125, 16);
+  
+  doc.setTextColor(AQUATECH_BLUE[0], AQUATECH_BLUE[1], AQUATECH_BLUE[2]);
+  doc.setFontSize(10);
+  doc.text(title.toUpperCase(), 125, 22);
+  
+  doc.setTextColor(100);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  doc.text(subtitle, 125, 28);
+
+  // 3. Separator
+  doc.setDrawColor(AQUATECH_BLUE[0], AQUATECH_BLUE[1], AQUATECH_BLUE[2]);
+  doc.setLineWidth(0.5);
+  doc.line(15, 38, 195, 38);
+}
+
 // Helper to convert numbers to Spanish words for "SON: ..."
 export function numberToSpanishWords(n: number): string {
   const units = ['', 'UN', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE'];
@@ -118,23 +159,23 @@ export function generateProfessionalPDF(
     unitPrice: item.unitPrice || item.estimatedCost || 0,
     total: item.total || (Number(item.quantity === 'GLOBAL' ? 1 : item.quantity) * (item.unitPrice || item.estimatedCost || 0))
   }));
-
   const doc = new jsPDF();
-  const accentColor: [number, number, number] = [0, 112, 192]; // Aquatech Blue
+  const accentColor = AQUATECH_BLUE;
   
   // --- 1. HEADER & LOGO ---
-  // Base64 logo for offline/online consistency
-  const AQUATECH_LOGO_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAA7ARUDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9U6ZJIsKF3YIijJZjgAetPr5x/b6+Mx+Df7N/iCa1uPJ1vXANG0/acMGlBEjj/djDnPrirhF1JKK6kVJqnFyfQ8r1j/grR8LtL1S/s4/DviS/S1nkhW5gih2TBWI3rmTODjIz2NfY3gfxhp3xA8H6L4l0iXz9L1a0jvbeTvsdQwB9CM4I9Qa/nNUbcKOwr9Zf+CUPxj/4Sz4R6t4BvZ92oeF7jzbVWOSbOYllA9lkDj6MtexjMFCjTU6fTc8bB42Vao4T+R901U1TVrPRrCa9vrmKztIV3STzMFRB6kmrLMFUkkADkk18C/tFfGi6+Jnim40+zuGTw1YSmOCFThZ3Xgyt689PQfWjKcrqZrX9nF2itW+3/BODiPiCjw/hfbTXNOWkY93/AJLqe8eKv2zPCGi3TwaTZXuvlTjzogIoj9C3JH4Vjad+3Fo8swW+8MX1tETzJBOkhH4HFeFfC34C+J/iwjXWnRxWOlo2xtQvCQhYdQgHLEe3HvXa+J/2NPF2i6fJdabf2OuPGNxtYg0UrY/u7uD9M19tPLeHsNP6tWqe/wCr/TRH5VTzzjLG0/ruHpfu90lFaryv7z+R9W/D74reGfiZZNNoWpJcyxjMtq42TRf7yHnHuOK68HdX5daRrGreC9fivbCefTNWspCN3KujA8qw9OxBr9CPgr8ToPir4HtdXVFhvUPkXlup4jmA5x7Hgj2NfNZ3kTyy1ak+am/w/rufc8K8WrPHLC4mPJWj06NdbdmuqPE/j1/wUL8Efs+/E3UPBOt6Brt/qNnDDM89ikRiIkQOoG5weAeeK9A/Zj/am8O/tSaNrupeHdM1LTIdJuUtZl1JUDOzJuBXax4x61+Yf/BTP/k8DxN/14WH/pOtfT//AAR7/wCSf/Ef/sLW3/og15VXC044VVVvofX08TUlinRe2p9TftLftMaB+zB4V0vX/EOm6hqVrf3v2GOPTVQur7GfJ3MBjCmvLPgr/wAFHPAnxy+J2jeCdH8Pa/ZajqZkEU94kIiXZGzndtcnop7Vwf8AwV5/5In4O/7GAf8ApPLXxd/wTx/5O/8AAP8Av3X/AKTS06OFpzwzqvfUVbFVIYlUo7Ox+4Nec/H345aB+zv8OLvxl4jS4nsoJY7eO1tApmnkdsKiBiBnGTyeimvRe1fld/Vf/Wk4xMvMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfMfM9/9k=';
-  
-  try {
-    doc.addImage(AQUATECH_LOGO_B64, 'JPEG', 22, 18.5, 65, 18);
-  } catch (e) {
-    console.error('Error rendering embedded logo:', e);
-    doc.setTextColor(0, 112, 192);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(22);
-    doc.text('AQUATECH', 15, 25);
-  }
+  addAquatechHeader(
+    doc, 
+    `${config.docType} Nº: ${config.docId}`, 
+    'CASTILLO CASTILLO PABLO JOSE'
+  );
+
+  // Additional header details for Quotes
+  doc.setTextColor(0);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  doc.text('18 DE NOVIEMBRE ENTRE CELICA Y GONZANAMA', 125, 31);
+  doc.text('Telf: 0992873735 | aquariegoloja@yahoo.com', 125, 34);
+
 
   // Fiscal Box (Top Right) - Rounded
   doc.setDrawColor(0);
@@ -312,4 +353,89 @@ export function generateProfessionalPDF(
   } else {
     doc.save(fileName);
   }
+}
+
+/**
+ * Generates a professional Project Report PDF (Bitácora + Expenses)
+ * Used by field operators for offline/online parity.
+ */
+export function generateProjectReportPDF(data: {
+  project: any;
+  clientName: string;
+  address: string;
+  chat: any[];
+  expenses: any[];
+}) {
+  const { project, clientName, address, chat, expenses } = data;
+  const doc = new jsPDF();
+  
+  // 1. Header with custom project title
+  addAquatechHeader(doc, 'REPORTE DE OBRA', `PROYECTO: ${project.title}`);
+  
+  // 2. Project Summary Box
+  doc.setDrawColor(200);
+  doc.roundedRect(15, 45, 180, 25, 2, 2);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Información del Proyecto:', 20, 52);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Cliente: ${clientName || 'N/A'}`, 20, 58);
+  doc.text(`Dirección: ${address || 'N/A'}`, 20, 64);
+  doc.text(`Fecha Reporte: ${new Date().toLocaleDateString()}`, 130, 58);
+  doc.text(`ID: #${project.id}`, 130, 64);
+
+  // 3. Bitácora de Campo Table
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(AQUATECH_BLUE[0], AQUATECH_BLUE[1], AQUATECH_BLUE[2]);
+  doc.text('BITÁCORA DE CAMPO', 15, 82);
+
+  const chatBody = chat.map(msg => [
+    new Date(msg.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }),
+    msg.userName || 'Sistema',
+    msg.content || (msg.media?.length ? '[MULTIMEDIA]' : '-'),
+    msg.isPending ? 'OFFLINE' : 'SINC.'
+  ]);
+
+  autoTable(doc, {
+    startY: 87,
+    head: [['Fecha/Hora', 'Usuario', 'Descripción', 'Estado']],
+    body: chatBody,
+    theme: 'grid',
+    headStyles: { fillColor: AQUATECH_BLUE, textColor: 255 },
+    styles: { fontSize: 8 },
+    margin: { left: 15, right: 15 }
+  });
+
+  // 4. Gastos Table
+  const finalY = (doc as any).lastAutoTable.finalY + 15;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('GASTOS Y EGRESOS', 15, finalY);
+
+  let totalExpenses = 0;
+  const expensesBody = expenses.map(exp => {
+    totalExpenses += Number(exp.amount);
+    return [
+      new Date(exp.date).toLocaleDateString(),
+      exp.description,
+      `$ ${Number(exp.amount).toFixed(2)}`,
+      exp.isPending ? 'PEND.' : 'SINC.'
+    ];
+  });
+
+  autoTable(doc, {
+    startY: finalY + 5,
+    head: [['Fecha', 'Descripción', 'Monto', 'Estado']],
+    body: expensesBody,
+    theme: 'grid',
+    headStyles: { fillColor: [100, 100, 100], textColor: 255 },
+    styles: { fontSize: 8 },
+    foot: [['', 'TOTAL ACUMULADO:', `$ ${totalExpenses.toFixed(2)}`, '']],
+    footStyles: { fillColor: [240, 240, 240], textColor: 0, fontStyle: 'bold' },
+    margin: { left: 15, right: 15 }
+  });
+
+  doc.save(`Reporte_Obra_${project.id}_${new Date().getTime()}.pdf`);
 }

@@ -7,6 +7,11 @@ import { db } from '@/lib/db'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { 
+  generateProfessionalPDF, 
+  generateProjectReportPDF, 
+  addAquatechHeader 
+} from '@/lib/pdf-generator'
 
 import Link from 'next/link'
 
@@ -199,7 +204,6 @@ export default function OperatorProjectClient({
   const [message, setMessage] = useState('')
   const [notePhase, setNotePhase] = useState<number | null>(activePhase)
   const [note, setNote] = useState('')
-
   const handleDayRecord = async () => {
     setLoading(true)
     try {
@@ -207,19 +211,25 @@ export default function OperatorProjectClient({
       let location = null
       if ('geolocation' in navigator) {
         try {
-          location = await new Promise<any>((resolve) => {
+          location = await new Promise<any>((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(
               pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-              () => resolve(null),
-              { timeout: 10000 }
+              err => reject(err),
+              { timeout: 10000, enableHighAccuracy: true }
             )
-          })
+          }).catch(() => null)
         } catch(e) {}
+      }
+
+      if (!location) {
+        alert("⚠️ UBICACIÓN OBLIGATORIA: Por favor activa el GPS y permite el acceso para continuar. Es necesario para la auditoría de campo.")
+        setLoading(false)
+        return
       }
 
       const isEnding = !!activeRecord
       const payload = isEnding 
-        ? { recordId: activeRecord.id, projectId: project.id }
+        ? { recordId: activeRecord.id, projectId: project.id, location }
         : { projectId: project.id, location }
       const type = isEnding ? 'DAY_END' : 'DAY_START'
 
@@ -307,16 +317,27 @@ export default function OperatorProjectClient({
           navigator.geolocation.getCurrentPosition(
             pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
             () => resolve(null),
-            { timeout: 8000 }
+            { timeout: 8000, enableHighAccuracy: true }
           )
         })
+      }
+
+      if (!location) {
+        alert("⚠️ UBICACIÓN REQUERIDA: No podemos registrar el gasto sin coordenadas de GPS. Por favor activa la ubicación.")
+        setLoading(false)
+        return
+      }
+
+      let processedPhoto = expensePhoto
+      if (expensePhoto) {
+        processedPhoto = await compressImage(expensePhoto)
       }
 
       const payload = { 
         amount: Number(amount), 
         description, 
         date: new Date().toISOString(),
-        receiptPhoto: expensePhoto // Base64
+        receiptPhoto: processedPhoto // Compressed Base64
       }
 
       if (!navigator.onLine) {
@@ -349,7 +370,6 @@ export default function OperatorProjectClient({
         if (!res.ok) throw new Error('Refetch')
         router.refresh()
       } catch (err) {
-        // Fallback
         await db.outbox.add({
           type: 'EXPENSE',
           projectId: project.id,
@@ -417,18 +437,30 @@ export default function OperatorProjectClient({
         location = await new Promise((resolve) => {
           navigator.geolocation.getCurrentPosition(
             pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-            () => resolve(null)
+            () => resolve(null),
+            { enableHighAccuracy: true, timeout: 5000 }
           )
         })
       }
 
+      if (!location) {
+        alert("⚠️ UBICACIÓN NO DETECTADA: Para bitácora de campo es obligatorio el GPS.")
+        setLoading(false)
+        return
+      }
+
       let mediaData = null
       if (mediaFile) {
-        const base64 = await new Promise((resolve) => {
+        let base64: string = await new Promise((resolve) => {
           const reader = new FileReader()
-          reader.onloadend = () => resolve(reader.result)
+          reader.onloadend = () => resolve(reader.result as string)
           reader.readAsDataURL(mediaFile)
         })
+
+        if (mediaFile.type.startsWith('image/')) {
+          base64 = await compressImage(base64)
+        }
+
         mediaData = {
           base64,
           filename: mediaFile.name,
@@ -455,6 +487,7 @@ export default function OperatorProjectClient({
          })
          if (!customMsg) setMessage('')
          else setNote('')
+         setLoading(false)
          return
       }
 
@@ -502,16 +535,27 @@ export default function OperatorProjectClient({
           )
         })
       }
+      
+      if (!location) {
+        alert("⚠️ UBICACIÓN NO DETECTADA: Para subir imágenes a la galería es obligatorio el GPS.")
+        setLoading(false)
+        return
+      }
 
       const isOffline = !navigator.onLine
       const isBase64 = typeof file.url === 'string' && file.url.startsWith('data:')
+
+      let processedBase64 = isBase64 ? file.url : null
+      if (isBase64 && file.mimeType?.startsWith('image/')) {
+        processedBase64 = await compressImage(file.url)
+      }
 
       const payload = { 
         phaseId: activePhase || project.phases[0]?.id, 
         content: '', 
         type: file.type,
         media: isBase64 ? {
-          base64: file.url,
+          base64: processedBase64,
           filename: file.filename,
           mimeType: file.mimeType
         } : {
@@ -645,93 +689,88 @@ export default function OperatorProjectClient({
   const generateFichaPDF = () => {
     try {
       const doc = new jsPDF()
-      doc.setFillColor(12, 26, 42)
-      doc.rect(0, 0, 210, 55, 'F')
-      doc.setDrawColor(56, 189, 248)
-      doc.setLineWidth(0.5)
-      doc.line(20, 50, 190, 50)
-      doc.setTextColor(56, 189, 248)
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'bold')
-      doc.text('AQUATECH S.A.', 20, 18)
       
-      doc.setTextColor(255, 255, 255)
-      doc.setFontSize(24)
-      doc.text('FICHA DE PROYECTO', 20, 33)
+      // 1. Professional Header
+      addAquatechHeader(doc, 'FICHA TÉCNICA DE PROYECTO', `PROYECTO: ${project.title}`);
       
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'normal')
-      doc.text(`#${project.id} — ${project.title}`, 20, 43)
-      doc.text(`Fecha: ${new Date().toLocaleDateString('es-EC')}`, 150, 43)
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100);
+      doc.text(`ID Seguimiento: #${project.id}`, 20, 42);
+      doc.text(`Fecha de Impresión: ${new Date().toLocaleDateString('es-EC')}`, 145, 42);
 
-      let y = 70
-      doc.setTextColor(56, 189, 248)
-      doc.setFontSize(14)
-      doc.setFont('helvetica', 'bold')
+      let y = 55
+      doc.setTextColor(0, 112, 192); // Aquatech Blue
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
       doc.text('1. DATOS GENERALES', 20, y)
-      y += 10
+      y += 8
 
       const infoRows = [
-        ['Título', project.title],
-        ['Estado', project.status],
-        ['Ciudad', projectCity || 'N/A'],
-        ['Dirección', projectAddress || 'N/A'],
-        ['Fecha de Inicio', formatDate(project.startDate)],
-        ['Fecha Fin (Est.)', formatDate(project.endDate)],
+        ['Título del Proyecto', project.title],
+        ['Estado Actual', project.status],
+        ['Ciudad / Ubicación', projectCity || 'N/A'],
+        ['Dirección Exacta', projectAddress || 'N/A'],
+        ['Fecha Inicia Obra', formatDate(project.startDate)],
+        ['Fecha Entrega Est.', formatDate(project.endDate)],
       ]
 
       autoTable(doc, {
         startY: y,
-        head: [['Campo', 'Valor']],
+        head: [['Detalle', 'Información']],
         body: infoRows,
         theme: 'grid',
-        headStyles: { fillColor: [56, 189, 248], textColor: 255 },
-        styles: { fontSize: 9, cellPadding: 4 },
+        headStyles: { fillColor: [0, 112, 192], textColor: 255 },
+        styles: { fontSize: 9, cellPadding: 3 },
         columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } }
       })
-      y = (doc as any).lastAutoTable.finalY + 15
+      y = (doc as any).lastAutoTable.finalY + 12
 
-      doc.setTextColor(56, 189, 248)
-      doc.setFontSize(14)
-      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(0, 112, 192);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
       doc.text('2. INFORMACIÓN DEL CLIENTE', 20, y)
-      y += 10
+      y += 8
 
       autoTable(doc, {
         startY: y,
-        head: [['Campo', 'Valor']],
+        head: [['Concepto', 'Datos de Contacto']],
         body: [
-          ['Nombre', clientName || 'N/A'],
-          ['Ciudad', projectCity || 'N/A'],
-          ['Dirección', projectAddress || 'N/A'],
+          ['Nombre / Razón Social', clientName || 'N/A'],
+          ['Localidad', projectCity || 'N/A'],
+          ['Dirección Principal', projectAddress || 'N/A'],
         ],
         theme: 'grid',
-        headStyles: { fillColor: [56, 189, 248], textColor: 255 },
-        styles: { fontSize: 9, cellPadding: 4 },
+        headStyles: { fillColor: [100, 100, 100], textColor: 255 },
+        styles: { fontSize: 9, cellPadding: 3 },
         columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } }
       })
-      y = (doc as any).lastAutoTable.finalY + 15
+      y = (doc as any).lastAutoTable.finalY + 12
 
       const phaseData = project.phases?.map((p: any, i: number) => [
-        `${i + 1}`, p.title, p.description || '—', `${p.estimatedDays || 0} días`, p.status === 'COMPLETADA' ? 'Completada' : p.status === 'EN_PROGRESO' ? 'En Progreso' : 'Pendiente'
+        `${i + 1}`, 
+        p.title, 
+        p.description || '—', 
+        `${p.estimatedDays || 0} d`, 
+        p.status === 'COMPLETADA' ? '✓' : p.status === 'EN_PROGRESO' ? '...' : '-'
       ]) || []
 
       if (phaseData.length > 0) {
-        doc.setTextColor(56, 189, 248)
-        doc.setFontSize(14)
-        doc.text('3. FASES DE TRABAJO', 20, y)
-        y += 10
+        doc.setTextColor(0, 112, 192);
+        doc.setFontSize(12);
+        doc.text('3. FASES Y CRONOGRAMA', 20, y)
+        y += 8
         autoTable(doc, {
           startY: y,
-          head: [['#', 'Fase', 'Descripción', 'Días Est.', 'Estado']],
+          head: [['#', 'Fase de Trabajo', 'Descripción', 'Plazo', 'Estado']],
           body: phaseData,
           theme: 'grid',
-          headStyles: { fillColor: [56, 189, 248], textColor: 255 },
+          headStyles: { fillColor: [0, 112, 192], textColor: 255 },
           styles: { fontSize: 8 },
         })
       }
 
-      doc.save(`Proyecto_${project.id}_${project.title.replace(/\s+/g, '_')}.pdf`)
+      doc.save(`Ficha_${project.id}_${project.title.replace(/\s+/g, '_')}.pdf`)
     } catch(err) {
       console.error(err)
       alert("Error al generar PDF")
@@ -740,75 +779,13 @@ export default function OperatorProjectClient({
 
   const generateReportePDF = () => {
     try {
-      const doc = new jsPDF()
-      doc.setFillColor(12, 26, 42) 
-      doc.rect(0, 0, 210, 45, 'F')
-      doc.setTextColor(255, 255, 255)
-      doc.setFontSize(22)
-      doc.setFont('helvetica', 'bold')
-      doc.text('AQUATECH - REPORTE DE OBRA', 20, 25)
-      
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'normal')
-      doc.text(`ID Proyecto: #${project.id}`, 20, 35)
-      doc.text(`Fecha de Reporte: ${new Date().toLocaleDateString()}`, 150, 35)
-
-      doc.setTextColor(0, 0, 0)
-      doc.setFontSize(16)
-      doc.setFont('helvetica', 'bold')
-      doc.text('Resumen Ejecutivo', 20, 60)
-      
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'normal')
-      doc.text(`Proyecto: ${project.title}`, 20, 70)
-      doc.text(`Estado: ${project.status}`, 20, 77)
-      doc.text(`Cliente: ${clientName || 'N/A'}`, 120, 70)
-
-      doc.addPage()
-      doc.setFontSize(16)
-      doc.setFont('helvetica', 'bold')
-      doc.text('Bitácora de Campo (Avances + Offline)', 20, 20)
-      
-      const chatData = combinedChat.map((msg: any) => [
-        formatDateTime(msg.createdAt),
-        msg.userName || 'Sistema',
-        msg.content || (msg.media?.length ? '[Contenido Multimedia]' : '-'),
-        msg.isPending ? '⏳ PENDIENTE (Offline)' : '✅ SINCRONIZADO'
-      ])
-
-      autoTable(doc, {
-        startY: 30,
-        head: [['Fecha/Hora', 'Usuario', 'Descripción', 'Estado de Red']],
-        body: chatData.length > 0 ? chatData : [['Sin avances registrados', '-', '-', '-']],
-        styles: { fontSize: 9 }
-      })
-
-      doc.addPage()
-      doc.setFontSize(16)
-      doc.setFont('helvetica', 'bold')
-      doc.text('Detalle de Gastos (+ Offline)', 20, 20)
-
-      let totalExpenses = 0
-      const expenseData = allExpenses.map((exp: any) => {
-        totalExpenses += Number(exp.amount)
-        return [
-          formatDate(exp.date),
-          exp.description,
-          `$ ${Number(exp.amount).toFixed(2)}`,
-          exp.isPending ? '⏳ PEND.' : '✅ SINC.'
-        ]
-      })
-
-      autoTable(doc, {
-        startY: 30,
-        head: [['Fecha', 'Descripción', 'Monto', 'Estado Red']],
-        body: expenseData.length > 0 ? expenseData : [['No hay gastos registrados', '-', '-', '-']],
-        styles: { fontSize: 9 },
-        foot: [['', 'TOTAL ACUMULADO:', `$ ${totalExpenses.toFixed(2)}`, '']],
-        footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' }
-      })
-
-      doc.save(`Reporte_Obra_${project.id}_${project.title.replace(/\s+/g, '_')}.pdf`)
+      generateProjectReportPDF({
+        project,
+        clientName,
+        address: projectAddress || '',
+        chat: combinedChat,
+        expenses: allExpenses
+      });
     } catch(err) {
       console.error(err)
       alert("Error al generar Reporte")

@@ -24,7 +24,7 @@ export default async function OperatorDashboard() {
   const activeProjects = await prisma.project.findMany({
     where: {
       team: { some: { userId } },
-      status: { in: ['ACTIVO', 'PENDIENTE'] }
+      status: { in: ['LEAD', 'ACTIVO', 'PENDIENTE'] }
     },
     orderBy: { updatedAt: 'desc' },
     include: {
@@ -85,7 +85,7 @@ export default async function OperatorDashboard() {
             <Link href={`/admin/operador/proyecto/${project.id}`} prefetch={true} key={project.id} className="card interactive" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
                 <span className={`status-badge status-${project.status.toLowerCase()}`}>
-                  {project.status === 'ACTIVO' ? 'Activo' : 'Pendiente'}
+                  {project.status === 'ACTIVO' ? 'Activo' : project.status === 'LEAD' ? 'Nuevo' : 'Pendiente'}
                 </span>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{project.phases.length} fases</span>
               </div>

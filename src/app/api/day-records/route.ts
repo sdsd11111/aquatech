@@ -56,12 +56,16 @@ export async function PUT(req: Request) {
     const session = await getServerSession(authOptions)
     if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 })
       
-    const { recordId, projectId, createdAt } = await req.json()
+    const { recordId, projectId, location, createdAt } = await req.json()
     const endTime = createdAt ? new Date(createdAt) : new Date()
 
     const record = await prisma.dayRecord.update({
       where: { id: Number(recordId) },
-      data: { endTime }
+      data: { 
+        endTime,
+        endLat: location?.lat,
+        endLng: location?.lng,
+      }
     })
 
     await prisma.chatMessage.create({

@@ -29,7 +29,8 @@ export default async function OperatorProjectDetail({ params }: { params: Promis
   })
 
   // If project doesn't exist or user not in team, back to dashboard
-  if (!project || project.team.length === 0) {
+  const isInTeam = project?.team.some((t: any) => t.userId === userId)
+  if (!project || !isInTeam) {
     redirect('/admin/operador')
   }
 

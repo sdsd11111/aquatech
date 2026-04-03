@@ -91,17 +91,28 @@ export default function TeamPage() {
 
   if (loading) return <div className="p-10 text-center">Cargando equipo...</div>
 
+  const currentUserId = (session?.user as any)?.id ? Number((session?.user as any).id) : null
+
   // Filter groups
   // Only SuperAdmin sees other SuperAdmins (API also filters this, but safeguard here)
-  const management = users.filter(u => 
-    u.role === 'SUPERADMIN' || u.role === 'ADMIN' || u.role === 'ADMINISTRADORA'
-  ).sort((a, b) => {
+  const management = users.filter(u => {
+    if (u.id === currentUserId && !isSuperAdmin) return false
+    return u.role === 'SUPERADMIN' || u.role === 'ADMIN' || u.role === 'ADMINISTRADORA'
+  }).sort((a, b) => {
     if (a.role === 'SUPERADMIN' && b.role !== 'SUPERADMIN') return -1
     if (a.role !== 'SUPERADMIN' && b.role === 'SUPERADMIN') return 1
     return 0
   })
-  const operators = users.filter(u => u.role === 'OPERATOR')
-  const subcontratistas = users.filter(u => u.role === 'SUBCONTRATISTA')
+
+  const operators = users.filter(u => {
+    if (u.id === currentUserId && !isSuperAdmin) return false
+    return u.role === 'OPERATOR'
+  })
+
+  const subcontratistas = users.filter(u => {
+    if (u.id === currentUserId && !isSuperAdmin) return false
+    return u.role === 'SUBCONTRATISTA'
+  })
 
   const formatDate = (date: any) => {
     if (!date) return 'Sin fecha'

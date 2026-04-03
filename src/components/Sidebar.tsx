@@ -125,11 +125,13 @@ const adminNavItems: NavSection[] = [
   },
 ]
 
+import { useLocalStorage } from '@/hooks/useLocalStorage'
+
 export default function Sidebar() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
+  const [openMenus, setOpenMenus] = useLocalStorage<Record<string, boolean>>('sidebar_open_menus', {
     'Proyectos': true,
     'Mis Proyectos': true,
     'Proyecto Actual': true,

@@ -15,6 +15,7 @@ import {
 import { formatToEcuador, ECUADOR_TIMEZONE, formatTimeEcuador, formatDateEcuador } from '@/lib/date-utils'
 
 import Link from 'next/link'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
 
 export default function ProjectExecutionClient({ 
   project, 
@@ -31,7 +32,7 @@ export default function ProjectExecutionClient({
   const [isPending, startTransition] = useTransition()
   const searchParams = useSearchParams()
   const view = searchParams.get('view') || 'records'
-  const [activeTab, setActiveTab] = useState<'records' | 'chat'>(view as 'records' | 'chat')
+  const [activeTab, setActiveTab] = useLocalStorage<'records' | 'chat'>(`project_${project.id}_active_tab`, view as 'records' | 'chat')
   const [handleDownloadLoading, setHandleDownloadLoading] = useState<string | null>(null)
   const [selectedPreviewImage, setSelectedPreviewImage] = useState<any>(null)
 
@@ -45,7 +46,7 @@ export default function ProjectExecutionClient({
   // --- EXPENSE EDIT/DELETE STATE ---
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
   const [editingExpense, setEditingExpense] = useState<any>(null)
-  const [expenseFormFields, setExpenseFormFields] = useState({
+  const [expenseFormFields, setExpenseFormFields, removeExpenseDraft] = useLocalStorage(`project_${project.id}_expense_draft`, {
     amount: '',
     description: '',
     isNote: false,
@@ -225,9 +226,9 @@ export default function ProjectExecutionClient({
   // Chat State
   // Instead of trying to find an active phase, default to null ("General")
   const [activePhase, setActivePhase] = useState<number | null>(null)
-  const [message, setMessage] = useState('')
+  const [message, setMessage, removeMessageDraft] = useLocalStorage(`project_${project.id}_chat_draft`, '')
   const [notePhase, setNotePhase] = useState<number | null>(activePhase)
-  const [note, setNote] = useState('')
+  const [note, setNote, removeNoteDraft] = useLocalStorage(`project_${project.id}_note_draft`, '')
   const handleDayRecord = async () => {
     setLoading(true)
     try {
@@ -378,8 +379,7 @@ export default function ProjectExecutionClient({
           status: 'pending'
         })
         setExpenseForm(false)
-        setAmount('')
-        setDescription('')
+        removeExpenseDraft()
         setLoading(false)
         return
       }
@@ -410,10 +410,7 @@ export default function ProjectExecutionClient({
         })
       }
       setExpenseForm(false)
-      setAmount('')
-      setDescription('')
-      setIsNote(false)
-      setExpensePhoto(null)
+      removeExpenseDraft()
     } catch (e) {
       console.error(e)
     } finally {
@@ -517,8 +514,8 @@ export default function ProjectExecutionClient({
             lng: location?.lng,
             status: 'pending'
          })
-         if (!customMsg) setMessage('')
-         else setNote('')
+         if (!customMsg) removeMessageDraft()
+         else removeNoteDraft()
          setLoading(false)
          return
       }
@@ -531,8 +528,8 @@ export default function ProjectExecutionClient({
         })
         if (!res.ok && res.status !== 401) throw new Error('Network error')
         
-        if (!customMsg) setMessage('')
-        else setNote('')
+        if (!customMsg) removeMessageDraft()
+        else removeNoteDraft()
         router.refresh()
       } catch (e) {
          await db.outbox.add({
@@ -544,8 +541,8 @@ export default function ProjectExecutionClient({
             lng: location?.lng,
             status: 'pending'
          })
-         if (!customMsg) setMessage('')
-         else setNote('')
+         if (!customMsg) removeMessageDraft()
+         else removeNoteDraft()
       }
     } catch (e) {
       alert("Error procesando mensaje")

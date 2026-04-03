@@ -12,10 +12,12 @@ interface QuoteFormProps {
   initialQuote?: any
 }
 
+import { useLocalStorage } from '@/hooks/useLocalStorage'
+
 export default function QuoteFormClient({ clients, materials, prefetchedProject, initialQuote }: QuoteFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [clientData, setClientData] = useState({
+  const [clientData, setClientData] = useLocalStorage('quote_draft_client', {
     name: initialQuote?.clientName || '',
     ruc: initialQuote?.clientRuc || '',
     address: initialQuote?.clientAddress || '',
@@ -23,11 +25,11 @@ export default function QuoteFormClient({ clients, materials, prefetchedProject,
     attention: initialQuote?.clientAttention || ''
   })
 
-  const [notes, setNotes] = useState(initialQuote?.notes || '')
+  const [notes, setNotes] = useLocalStorage('quote_draft_notes', initialQuote?.notes || '')
   
   // Format target date for <input type="date">
   const initialDate = initialQuote?.validUntil ? new Date(initialQuote.validUntil).toISOString().split('T')[0] : '';
-  const [validUntil, setValidUntil] = useState(initialDate)
+  const [validUntil, setValidUntil] = useLocalStorage('quote_draft_date', initialDate)
   
   const initialItems = useMemo(() => {
     if (initialQuote?.items) {
@@ -57,7 +59,11 @@ export default function QuoteFormClient({ clients, materials, prefetchedProject,
     return []
   }, [initialQuote, prefetchedProject])
 
-  const [items, setItems] = useState<BudgetItem[]>(initialItems)
+  const [items, setItems, removeItems] = useLocalStorage<BudgetItem[]>('quote_draft_items', initialItems)
+  const [_, __, removeClientData] = useLocalStorage('quote_draft_client', { name: '', ruc: '', address: '', phone: '', attention: '' }) 
+  const [___, ____, removeNotes] = useLocalStorage('quote_draft_notes', '')
+  const [_____, ______, removeDate] = useLocalStorage('quote_draft_date', '')
+
   const [calculations, setCalculations] = useState({
     subtotal0: 0,
     subtotal15: 0,
@@ -179,6 +185,10 @@ export default function QuoteFormClient({ clients, materials, prefetchedProject,
           }
 
           alert("Cotización guardada sin conexión. Se sincronizará en segundo plano cuando regreses a un área con cobertura.")
+          removeItems()
+          removeClientData()
+          removeNotes()
+          removeDate()
           router.push(`/admin/cotizaciones/offline?id=${actualId}`)
        } catch (error) {
           alert("Error crítico accediendo a la base de datos local.")
@@ -198,6 +208,10 @@ export default function QuoteFormClient({ clients, materials, prefetchedProject,
       })
 
       if (res.ok) {
+        removeItems()
+        removeClientData()
+        removeNotes()
+        removeDate()
         const data = await res.json()
         router.push(`/admin/cotizaciones/compuesto/${isEditing ? initialQuote.id : data.id}`)
         router.refresh()

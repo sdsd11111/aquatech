@@ -8,16 +8,17 @@ import ProjectUploader, { ProjectFile } from '@/components/ProjectUploader'
 import MediaCapture from '@/components/MediaCapture'
 import BudgetBuilder, { BudgetItem } from '@/components/BudgetBuilder'
 import { generateProfessionalPDF } from '@/lib/pdf-generator'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
 
 export default function NuevoProyectoPage() {
   const { data: session } = useSession()
   const router = useRouter()
-  const [step, setStep] = useState(1)
+  const [step, setStep] = useLocalStorage('project_draft_step', 1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   // Step 1: Datos Generales
-  const [projectData, setProjectData] = useState({
+  const [projectData, setProjectData, removeProjectData] = useLocalStorage('project_draft_data', {
     title: '',
     type: 'INSTALLATION',
     address: '',
@@ -92,8 +93,8 @@ export default function NuevoProyectoPage() {
   }
 
   // Step 2: Cliente
-  const [isNewClient, setIsNewClient] = useState(true)
-  const [clientData, setClientData] = useState({
+  const [isNewClient, setIsNewClient] = useLocalStorage('project_draft_is_new_client', true)
+  const [clientData, setClientData, removeClientData] = useLocalStorage('project_draft_client', {
     id: null as string | null,
     name: '',
     ruc: '',
@@ -108,16 +109,16 @@ export default function NuevoProyectoPage() {
   const [showClientDropdown, setShowClientDropdown] = useState(false)
 
   // Step 3: Fases
-  const [phases, setPhases] = useState<any[]>([
-    { id: '1', title: 'Fas e Inicial / Planificación', description: '', estimatedDays: 5 }
+  const [phases, setPhases, removePhases] = useLocalStorage<any[]>('project_draft_phases', [
+    { id: '1', title: 'Fases Inicial / Planificación', description: '', estimatedDays: 5 }
   ])
 
   // Step 4: Equipo
   const [availableTeam, setAvailableTeam] = useState<any[]>([])
-  const [selectedTeam, setSelectedTeam] = useState<string[]>([])
+  const [selectedTeam, setSelectedTeam, removeTeam] = useLocalStorage<string[]>('project_draft_team', [])
 
   // Step 6: Presupuesto
-  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([])
+  const [budgetItems, setBudgetItems, removeBudgetItems] = useLocalStorage<BudgetItem[]>('project_draft_budget', [])
   const [materials, setMaterials] = useState<any[]>([])
   const [budgetCalculations, setBudgetCalculations] = useState<any>({
     subtotal: 0,
@@ -133,7 +134,7 @@ export default function NuevoProyectoPage() {
   }, [])
 
   // Step 6+: Files (Persistent)
-  const [uploadedFiles, setUploadedFiles] = useState<ProjectFile[]>([])
+  const [uploadedFiles, setUploadedFiles, removeFiles] = useLocalStorage<ProjectFile[]>('project_draft_files', [])
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null)
 
   useEffect(() => {
@@ -221,6 +222,17 @@ export default function NuevoProyectoPage() {
       }
 
       const newProj = await resp.json()
+      
+      // Cleanup localStorage
+      setStep(1)
+      removeProjectData()
+      removeClientData()
+      removePhases()
+      removeTeam()
+      removeBudgetItems()
+      removeFiles()
+      window.localStorage.removeItem('project_draft_is_new_client')
+
       router.push(`/admin/proyectos/${newProj.id}`)
     } catch (err: any) {
       setError(err.message)

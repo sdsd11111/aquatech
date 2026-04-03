@@ -257,12 +257,22 @@ export default function TeamMemberPage() {
   }
 
   const handleDeleteAppointment = async (id: number) => {
-    const res = await fetch(`/api/appointments/${id}`, { method: 'DELETE' })
-    if (res.ok) {
-      setIsModalOpen(false)
+    // Optimistic UI update
+    const previousAppointments = [...appointments]
+    setAppointments(prev => prev.filter(a => a.id !== id))
+    setIsModalOpen(false)
+
+    try {
+      const res = await fetch(`/api/appointments/${id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        throw new Error('Failed to delete')
+      }
+      // Silently refresh in background
       fetchAppointments()
-    } else {
-      throw new Error('Failed to delete')
+    } catch (error) {
+      console.error('Error deleting appointment:', error)
+      alert('No se pudo eliminar la tarea. Se restaurará en el calendario.')
+      setAppointments(previousAppointments)
     }
   }
 
@@ -737,7 +747,7 @@ export default function TeamMemberPage() {
 
       <AppointmentModal 
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => { setIsModalOpen(false); setEditingEvent(null); }}
         onSave={handleSaveAppointment}
         onDelete={handleDeleteAppointment}
         initialData={editingEvent}

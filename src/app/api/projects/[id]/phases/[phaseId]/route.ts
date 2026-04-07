@@ -26,15 +26,14 @@ export async function PATCH(
       }
     })
 
-    if (!teamMember && session.user.role !== 'ADMIN') {
+    const isAdmin = session.user.role === 'SUPERADMIN' || session.user.role === 'ADMIN' || session.user.role === 'ADMINISTRADORA'
+
+    if (!teamMember && !isAdmin) {
       return NextResponse.json({ error: 'forbidden' }, { status: 403 })
     }
 
-    // Only allow non-status updates for Admins
     const isUpdatingMetadata = title !== undefined || description !== undefined || estimatedDays !== undefined
-    if (isUpdatingMetadata && session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Only admins can modify phase metadata' }, { status: 403 })
-    }
+
 
     const updatedPhase = await prisma.projectPhase.update({
       where: { id: Number(phaseId) },

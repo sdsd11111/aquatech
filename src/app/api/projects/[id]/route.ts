@@ -11,9 +11,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     const userRole = (session.user as any).role
-    if (userRole !== 'SUPERADMIN' && userRole !== 'ADMIN' && userRole !== 'ADMINISTRADORA') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
 
     const { id } = await params
     const data = await request.json()
@@ -91,9 +89,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     }
 
     const userRole = (session.user as any).role
-    if (userRole !== 'SUPERADMIN' && userRole !== 'ADMIN' && userRole !== 'ADMINISTRADORA') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
 
     const { id } = await params
     const projectId = Number(id)

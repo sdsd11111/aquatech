@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
-  reactCompiler: true,
+  // Fix: Force correct workspace root to prevent Client Component resolution errors
+  // Without this, Next.js picks up D:\Abel paginas\package-lock.json as root
+  outputFileTracingRoot: path.resolve(__dirname),
   images: {
     remotePatterns: [
       {
@@ -13,9 +16,6 @@ const nextConfig: NextConfig = {
         hostname: '*.googleusercontent.com',
       },
     ],
-  },
-  turbopack: {
-    root: process.cwd(),
   },
 };
 

@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { signOut, useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
+import { hasModuleAccess } from '@/lib/rbac'
 
 type NavItem = {
   label: string
@@ -181,9 +182,10 @@ export default function Sidebar() {
 
   const effectiveRole = String(session?.user?.role || offlineUser?.role || 'OPERATOR').toUpperCase()
   const effectiveName = session?.user?.name || offlineUser?.name || 'Usuario'
-  const isAdmin = effectiveRole.includes('ADMIN')
+  const isAdmin = effectiveRole.includes('ADMIN') || effectiveRole === 'SUPERADMIN'
   const isSuperAdmin = effectiveRole === 'SUPERADMIN'
   const isSubcontratista = effectiveRole === 'SUBCONTRATISTA'
+  const userPermissions = (session?.user as any)?.permissions || null
 
   const projectIdMatch = pathname.match(/\/admin\/(operador|subcontratista)\/proyecto\/(\d+)/)
   const projectId = projectIdMatch ? projectIdMatch[2] : null
@@ -263,14 +265,49 @@ export default function Sidebar() {
   const filteredAdminNavItems = adminNavItems.map(section => ({
     ...section,
     items: section.items.filter(item => {
-      if (!isSuperAdmin && (item.label === 'Marketing' || item.label === 'Blog')) {
+      // 1. Permission check based on label/slug
+      const moduleSlug = item.label.toLowerCase().replace(/\s+/g, '_')
+      
+      // Special case for 'gestión_de_equipo' or other nesting if needed
+      // But for simplicity, we map labels to our standard slugs
+      const slugMap: Record<string, string> = {
+        'dashboard': 'dashboard',
+        'marketing': 'marketing',
+        'blog': 'blog',
+        'calendario_maestro': 'calendario',
+        'proyectos': 'proyectos',
+        'cotizaciones': 'cotizaciones',
+        'inventario': 'inventario',
+        'recursos': 'recursos'
+      }
+      
+      const slug = slugMap[moduleSlug] || moduleSlug
+      
+      if (!hasModuleAccess(userPermissions, slug, effectiveRole)) {
         return false
       }
+
       return true
     })
   }))
 
-  const navItems = isAdmin ? filteredAdminNavItems : dynamicOperatorNavItems as NavSection[]
+  const filteredOperatorNavItems = dynamicOperatorNavItems.map(section => ({
+    ...section,
+    items: section.items.filter(item => {
+      const moduleSlug = item.label.toLowerCase().replace(/\s+/g, '_')
+      const slugMap: Record<string, string> = {
+        'mis_proyectos': 'proyectos',
+        'proyecto_actual': 'proyectos',
+        'cotizaciones': 'cotizaciones',
+        'inventario': 'inventario',
+        'recursos': 'recursos'
+      }
+      const slug = slugMap[moduleSlug] || moduleSlug
+      return hasModuleAccess(userPermissions, slug, effectiveRole)
+    })
+  }))
+
+  const navItems = isAdmin ? filteredAdminNavItems : filteredOperatorNavItems as NavSection[]
 
   const isActive = (href: string) => {
     if (href === '/admin') return pathname === '/admin'
@@ -396,8 +433,8 @@ export default function Sidebar() {
         </nav>
 
         <div className="sidebar-footer">
-          <div className={`sidebar-user ${(effectiveRole === 'ADMIN' || effectiveRole === 'ADMINISTRADORA') ? 'admin-no-profile' : ''}`} onClick={() => signOut({ callbackUrl: '/admin/login' })}>
-            {(effectiveRole !== 'ADMIN' && effectiveRole !== 'ADMINISTRADORA') ? (
+          <div className={`sidebar-user ${isAdmin ? 'admin-no-profile' : ''}`} onClick={() => signOut({ callbackUrl: '/admin/login' })}>
+            {!isAdmin ? (
               <>
                 <div className="sidebar-avatar">{userInitials}</div>
                 <div className="sidebar-user-info">
@@ -411,7 +448,7 @@ export default function Sidebar() {
               <div className="sidebar-user-info">
                 <div className="sidebar-user-name">Cerrar Sesión</div>
                 <div className="sidebar-user-role">
-                  {effectiveRole === 'ADMIN' ? 'Administrador' : 'Administradora'}
+                  {effectiveRole === 'SUPERADMIN' ? 'Super Administrador' : effectiveRole === 'ADMIN' ? 'Administrador' : 'Administradora'}
                 </div>
               </div>
             )}

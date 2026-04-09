@@ -27,6 +27,9 @@ export async function GET(request: Request) {
     // HIDE SUPERADMINS from everyone except Superadmins
     if (!isSuperAdmin) {
       whereClause.role = { not: 'SUPERADMIN' }
+    } else {
+      // Superadmin sees even deleted if they want? No, keep isActive logic
+      whereClause.isActive = true
     }
 
     if (roles) {
@@ -43,7 +46,8 @@ export async function GET(request: Request) {
     }
 
     // Hide their own profile if the user is an ADMINISTRADORA
-    if (currentUserRole === 'ADMINISTRADORA') {
+    // But Superadmin ALWAYS sees everyone
+    if (currentUserRole === 'ADMINISTRADORA' && !isSuperAdmin) {
       whereClause.id = { ...whereClause.id, not: Number(session.user.id) }
     }
 
@@ -57,6 +61,8 @@ export async function GET(request: Request) {
         role: true,
         username: true,
         image: true,
+        branch: true,
+        permissions: true,
         createdAt: true,
         projectTeams: {
           select: {
@@ -85,6 +91,8 @@ export async function GET(request: Request) {
         role: user.role,
         username: user.username,
         image: user.image,
+        branch: (user as any).branch || null,
+        permissions: (user as any).permissions || null,
         createdAt: user.createdAt,
         activeProjectsCount: activeCount
       }
@@ -104,11 +112,11 @@ export async function POST(request: Request) {
     const isSuperAdmin = currentUserRole === 'SUPERADMIN'
     const isAdminPrivileged = session?.user && (isSuperAdmin || currentUserRole === 'ADMIN' || currentUserRole === 'ADMINISTRADORA')
     
-    if (!isAdminPrivileged) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isSuperAdmin) {
+      return NextResponse.json({ error: 'Solo el Super Administrador puede crear nuevos miembros.' }, { status: 403 })
     }
 
-    const { name, username, password, role, email, phone, image } = await request.json()
+    const { name, username, password, role, email, phone, image, branch, permissions } = await request.json()
 
     if (!name || !username || !password || !role) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -141,6 +149,8 @@ export async function POST(request: Request) {
         email: email || null,
         phone: phone || null,
         image: image || null,
+        branch: branch || null,
+        permissions: permissions || null,
         isActive: true
       }
     })

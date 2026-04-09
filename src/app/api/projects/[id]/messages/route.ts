@@ -10,6 +10,21 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const session = await getServerSession(authOptions)
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+    const userRole = (session.user as any).role
+    if (userRole !== 'ADMIN' && userRole !== 'ADMINISTRADORA' && userRole !== 'SUPERADMIN') {
+      const isMember = await prisma.projectTeam.findUnique({
+        where: { projectId_userId: { projectId: Number(id), userId: Number(session.user.id) } }
+      })
+      if (!isMember) {
+        const isCreator = await prisma.project.findFirst({
+          where: { id: Number(id), createdBy: Number(session.user.id) }
+        })
+        if (!isCreator) {
+          return NextResponse.json({ error: 'No tienes acceso a este proyecto' }, { status: 403 })
+        }
+      }
+    }
+
     const { searchParams } = new URL(req.url)
     const since = searchParams.get('since')
 
@@ -23,7 +38,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
           select: {
             id: true,
             name: true,
-            role: true
+            role: true,
+            branch: true
           }
         },
         media: true
@@ -47,6 +63,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const { phaseId, content, type, lat, lng, media, createdAt } = await req.json()
     const projectId = Number(id)
     const userId = Number(session.user.id)
+    
+    const userRole = (session.user as any).role
+    if (userRole !== 'ADMIN' && userRole !== 'ADMINISTRADORA' && userRole !== 'SUPERADMIN') {
+      const isMember = await prisma.projectTeam.findUnique({
+        where: { projectId_userId: { projectId, userId } }
+      })
+      if (!isMember) {
+        const isCreator = await prisma.project.findFirst({
+          where: { id: projectId, createdBy: userId }
+        })
+        if (!isCreator) {
+          return NextResponse.json({ error: 'No tienes acceso a este proyecto' }, { status: 403 })
+        }
+      }
+    }
 
     let mediaUrl = null
     if (media && media.base64) {

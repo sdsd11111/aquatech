@@ -16,7 +16,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const userId = Number(session.user.id)
     const userRole = (session.user as any).role
 
-    // 🔒 Security Check: Verify user belongs to the project team OR is Admin
+    // 🔒 Security Check: Verify user belongs to the project team OR created the project OR is Admin
     if (!isAdmin(userRole)) {
       const isMember = await prisma.projectTeam.findUnique({
         where: {
@@ -27,7 +27,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         }
       })
       if (!isMember) {
-        return NextResponse.json({ error: 'No tienes acceso a este proyecto' }, { status: 403 })
+        // Also allow access if the user created the project (e.g. operators creating original leads)
+        const isCreator = await prisma.project.findFirst({
+          where: {
+            id: projectId,
+            createdBy: userId
+          }
+        })
+        if (!isCreator) {
+          return NextResponse.json({ error: 'No tienes acceso a este proyecto' }, { status: 403 })
+        }
       }
     }
 

@@ -7,6 +7,7 @@ import { useSession, signOut } from 'next-auth/react'
 import CalendarView from '@/components/Calendar/CalendarView'
 import AppointmentModal from '@/components/Calendar/AppointmentModal'
 import { formatToEcuador, getLocalNow, formatTimeEcuador, formatDateEcuador, formatDateLongEcuador } from '@/lib/date-utils'
+import { getPermissionsArray } from '@/lib/rbac'
 
 // Inline SVG icons to avoid lucide-react webpack bundling issues
 const svgProps = (size: number, style?: React.CSSProperties, className?: string) => ({
@@ -42,7 +43,8 @@ export default function TeamMemberPage() {
   const { data: session } = useSession()
   // Robust admin check consistent with Sidebar
   const effectiveRole = String((session?.user as any)?.role || 'OPERATOR').toUpperCase()
-  const isAdmin = effectiveRole.includes('ADMIN') || Number((session?.user as any)?.id) === 1
+  const isSuperAdmin = effectiveRole === 'SUPERADMIN'
+  const isAdmin = effectiveRole.includes('ADMIN') || isSuperAdmin || Number((session?.user as any)?.id) === 1
   
   const [member, setMember] = useState<any>(null)
   const [activityData, setActivityData] = useState<any>(null)
@@ -219,6 +221,36 @@ export default function TeamMemberPage() {
     }
   }
 
+  const handlePermissionsChange = async (slug: string, checked: boolean) => {
+    if (!isSuperAdmin) return
+    
+    const currentPerms = getPermissionsArray(member.permissions, member.role)
+
+    const newPerms = checked 
+      ? [...new Set([...currentPerms, slug])]
+      : currentPerms.filter(p => p !== slug)
+
+    const permissionsString = JSON.stringify(newPerms)
+    
+    // Optimistic UI
+    setMember({ ...member, permissions: permissionsString })
+
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ permissions: permissionsString })
+      })
+      if (!res.ok) throw new Error('Error al actualizar permisos')
+      setSecurityMsg({ text: 'Permisos actualizados con éxito', type: 'success' })
+      setTimeout(() => setSecurityMsg({ text: '', type: '' }), 2000)
+    } catch (err: any) {
+      setSecurityMsg({ text: err.message, type: 'error' })
+      // Rollback optimistic UI
+      setMember({ ...member }) 
+    }
+  }
+
   const handleForceLogout = async () => {
     if (!window.confirm(`¿Deseas cerrar la sesión de ${member.name} en todos sus dispositivos de forma inmediata?`)) return
     
@@ -304,7 +336,41 @@ export default function TeamMemberPage() {
         </Link>
         <h1 className="page-title">{member.name}</h1>
         <div className="page-subtitle" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span className="badge badge-info">{member.role === 'ADMIN' ? 'Administrador' : 'Operador Especialista'}</span>
+          <span className="badge badge-info">{member.role === 'ADMIN' ? 'Administrador' : member.role === 'SUPERADMIN' ? 'Super Admin' : member.role === 'ADMINISTRADORA' ? 'Administradora' : member.role === 'SUBCONTRATISTA' ? 'Subcontratista' : 'Operador Especialista'}</span>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="badge" style={{ backgroundColor: 'rgba(56, 189, 248, 0.1)', color: 'var(--info)', border: '1px solid rgba(56, 189, 248, 0.25)', height: '24px', display: 'flex', alignItems: 'center' }}>
+              📍 {member.branch || 'Sin Sucursal'}
+            </span>
+            {isAdmin && (
+              <select 
+                style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.7rem', color: 'var(--text-muted)', padding: '2px 4px', cursor: 'pointer' }}
+                value={member.branch || ''}
+                onChange={async (e) => {
+                  const newBranch = e.target.value;
+                  try {
+                    const res = await fetch(`/api/users/${userId}`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ branch: newBranch })
+                    });
+                    if (res.ok) {
+                      setMember({ ...member, branch: newBranch });
+                    }
+                  } catch (err) {
+                    console.error('Error updating branch:', err);
+                  }
+                }}
+              >
+                <option value="">Cambiar...</option>
+                <option value="Loja">Loja</option>
+                <option value="Yantzaza">Yantzaza</option>
+                <option value="Malacatos-Loja">Malacatos-Loja</option>
+                <option value="Vilcabamba-Loja">Vilcabamba-Loja</option>
+              </select>
+            )}
+          </div>
+
           <span>@{member.username}</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Mail size={14}/> {member.email || 'correo.pendiente@aquatech.com'}</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Phone size={14}/> {member.phone || 'Sin teléfono'}</span>
@@ -445,6 +511,84 @@ export default function TeamMemberPage() {
                     {securityMsg.type === 'success' ? <Activity size={14}/> : <Shield size={14}/>}
                     {securityMsg.text}
                 </div>
+            )}
+
+            {isSuperAdmin && (
+              <div style={{ marginTop: '30px', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                   <div style={{ width: '3px', height: '16px', backgroundColor: 'var(--primary)', borderRadius: '2px' }}></div>
+                   <label style={{ fontSize: '0.9rem', fontWeight: '800', color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                     Pestañas Permitidas (Control de Acceso)
+                   </label>
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
+                  {[
+                    { slug: 'dashboard', label: 'Dashboard' },
+                    { slug: 'marketing', label: 'Marketing' },
+                    { slug: 'blog', label: 'Blog' },
+                    { slug: 'calendario', label: 'Calendario' },
+                    { slug: 'proyectos', label: 'Proyectos' },
+                    { slug: 'equipo', label: 'Equipo' },
+                    { slug: 'reportes', label: 'Reportes' },
+                    { slug: 'cotizaciones', label: 'Cotizaciones' },
+                    { slug: 'inventario', label: 'Inventario' },
+                    { slug: 'recursos', label: 'Recursos' }
+                  ].map(module => {
+                    const currentPerms = getPermissionsArray(member.permissions, member.role)
+                    const isChecked = currentPerms.includes(module.slug)
+
+                    return (
+                      <div 
+                        key={module.slug} 
+                        onClick={() => handlePermissionsChange(module.slug, !isChecked)}
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '12px', 
+                          cursor: 'pointer', 
+                          padding: '12px 16px', 
+                          borderRadius: '14px', 
+                          backgroundColor: isChecked ? 'rgba(56, 189, 248, 0.05)' : 'transparent', 
+                          border: `1px solid ${isChecked ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.05)'}`, 
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <div style={{ 
+                          width: '20px', 
+                          height: '20px', 
+                          borderRadius: '6px', 
+                          border: `2px solid ${isChecked ? 'var(--primary)' : 'rgba(255,255,255,0.2)'}`,
+                          backgroundColor: isChecked ? 'var(--primary)' : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s'
+                        }}>
+                          {isChecked && (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          )}
+                        </div>
+                        <span style={{ fontSize: '0.9rem', fontWeight: '600', color: isChecked ? '#fff' : 'var(--text-muted)' }}>
+                          {module.label}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <style jsx>{`
+                  .permission-chip:hover {
+                    background-color: rgba(255,255,255,0.05) !important;
+                    border-color: rgba(255,255,255,0.1) !important;
+                    transform: translateY(-2px);
+                  }
+                  .permission-chip:active {
+                    transform: scale(0.95);
+                  }
+                `}</style>
+              </div>
             )}
           </div>
         )}

@@ -21,6 +21,8 @@ model User {
   image            String?           @db.LongText
   sessionVersion   Int               @default(1) @map("session_version")
   displayPassword  String?           @map("display_password") @db.VarChar(255)
+  branch           String?           @db.VarChar(100)
+  permissions      String?           @db.Text
   appointments     Appointment[]
   blogPosts        BlogPost[]        @relation("BlogPostAuthor")
   chatMessages     ChatMessage[]

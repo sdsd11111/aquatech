@@ -30,6 +30,7 @@ export const authOptions: AuthOptions = {
             passwordHash: true,
             isActive: true,
             sessionVersion: true,
+            permissions: true,
           } as any
         }) as any
 
@@ -55,6 +56,7 @@ export const authOptions: AuthOptions = {
           role: user.role,
           username: user.username,
           sessionVersion: user.sessionVersion,
+          permissions: user.permissions,
         }
       },
     }),
@@ -66,6 +68,7 @@ export const authOptions: AuthOptions = {
         token.userId = (user as any).id
         token.username = (user as any).username
         token.sessionVersion = (user as any).sessionVersion
+        token.permissions = (user as any).permissions
         token.lastChecked = Date.now()
       }
 
@@ -78,13 +81,16 @@ export const authOptions: AuthOptions = {
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: Number(token.userId) },
-            select: { sessionVersion: true, isActive: true } as any
+            select: { sessionVersion: true, isActive: true, permissions: true, role: true } as any
           }) as any
           
           if (dbUser) {
             if (!dbUser.isActive || dbUser.sessionVersion !== token.sessionVersion) {
                return { ...token, error: 'SessionRevoked' }
             }
+            // Sync permissions and role in the background
+            token.permissions = dbUser.permissions
+            token.role = dbUser.role
             token.lastChecked = now // Update timestamp on success
           }
         } catch (error) {
@@ -107,6 +113,7 @@ export const authOptions: AuthOptions = {
         u.id = token.userId
         u.username = token.username
         u.sessionVersion = token.sessionVersion
+        u.permissions = token.permissions
       }
       return session
     },

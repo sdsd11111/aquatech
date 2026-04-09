@@ -218,7 +218,8 @@ export default function ProjectExecutionClient({
             const uniqueNew = (newMsgs as any[]).filter((m: any) => !existingIds.has(m.id)).map((m: any) => ({
               ...m,
               isMe: m.userId === Number(session?.user?.id),
-              userName: m.user?.name || 'Usuario'
+              userName: m.user?.name || 'Usuario',
+              userBranch: m.user?.branch || null
             }))
             
             if (uniqueNew.length > 0) {
@@ -1695,7 +1696,7 @@ export default function ProjectExecutionClient({
               ) : (
                 filteredChat.map((msg: any) => (
                   <div key={msg.id} className="chat-message" style={{ alignSelf: msg.isMe ? 'flex-end' : 'flex-start', maxWidth: isSmallScreen ? '92%' : '80%', display: 'flex', flexDirection: 'column' }}>
-                    {!msg.isMe && <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'bold', marginBottom: '4px', marginLeft: '12px' }}>{msg.userName}</span>}
+                    {!msg.isMe && <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'bold', marginBottom: '4px', marginLeft: '12px' }}>{msg.userName}{msg.userBranch && <span style={{ fontWeight: '500', color: 'var(--info)', marginLeft: '6px', fontSize: '0.65rem' }}>📍{msg.userBranch}</span>}</span>}
                     <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', flexDirection: msg.isMe ? 'row' : 'row-reverse' }}>
                       {msg.isMe && (
                         <button

@@ -28,6 +28,8 @@ export async function GET(
         role: true,
         username: true,
         displayPassword: true,
+        branch: true,
+        permissions: true,
         createdAt: true,
         isActive: true,
         projectTeams: {
@@ -87,5 +89,52 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching user detail:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const session = await getServerSession(authOptions)
+    
+    const { isAdmin } = await import('@/lib/rbac')
+    if (!session || !isAdmin((session.user as any).role)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { name, email, phone, branch, role, permissions } = await request.json()
+    const userId = Number(id)
+
+    // Security check: only superadmins can change roles
+    const updateData: any = {
+      name,
+      email,
+      phone,
+      branch,
+      permissions
+    }
+
+    if (role && (session.user as any).role === 'SUPERADMIN') {
+      updateData.role = role
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        branch: true,
+        permissions: true
+      }
+    })
+
+    return NextResponse.json(updatedUser)
+  } catch (error) {
+    console.error('Error updating user:', error)
+    return NextResponse.json({ error: 'Error updating user' }, { status: 500 })
   }
 }

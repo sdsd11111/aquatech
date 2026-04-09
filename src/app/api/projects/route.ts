@@ -26,13 +26,24 @@ export async function GET(request: Request) {
     }
 
     if (isOperator(userRole)) {
-      whereClause.team = {
-        some: {
-          userId: Number(userId)
+      whereClause.OR = [
+        {
+          team: {
+            some: {
+              userId: Number(userId)
+            }
+          }
+        },
+        {
+          createdBy: Number(userId)
         }
-      }
+      ]
       if (!whereClause.status) {
-        whereClause.status = { not: 'LEAD' }
+        // Operators only see their own LEADs, but not other people's LEADs.
+        // The OR clause already restricts to their team or created by them.
+        // We can just leave status open so they see their leads, 
+        // OR if you still want to hide their own leads for some reason, we'd add it to AND.
+        // It makes sense they see their own leads.
       }
     }
 

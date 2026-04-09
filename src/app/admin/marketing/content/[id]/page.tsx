@@ -4,8 +4,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import HeadlineSelector from '@/components/marketing/HeadlineSelector'
 import MarketingCalendar from '@/components/marketing/MarketingCalendar'
-// ULTIMATE LOCAL RESOLUTION
-import { UltraLocalEditor } from './ArticleEditorView'
+import EditorWrapper from './EditorWrapper'
 
 export default async function PipelineDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -28,8 +27,12 @@ export default async function PipelineDetailPage({ params }: { params: Promise<{
     notFound()
   }
 
-  // Calculamos en qué paso estamos
   const status = pipeline.status
+
+  // Pre-extract pillar article data as primitives for the client component
+  const pillarArticle = pipeline.articles?.find((a: any) => a.type === 'PILLAR')
+  const pillarId = pillarArticle?.id ?? null
+  const pillarContent = pillarArticle?.content ?? ''
 
   return (
     <div className="pipeline-detail-page" style={{ maxWidth: '100vw', margin: '0 2rem', padding: '2rem' }}>
@@ -69,7 +72,7 @@ export default async function PipelineDetailPage({ params }: { params: Promise<{
         </div>
       </div>
 
-      {/* Stepper (Simplified) */}
+      {/* Stepper */}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '1rem' }}>
         {[
           { label: '1. Títulos', active: status === 'IDEA' || status === 'HEADLINES' },
@@ -106,17 +109,13 @@ export default async function PipelineDetailPage({ params }: { params: Promise<{
           </div>
         )}
 
-        {status === 'REVIEWING_ARTICLES' && (() => {
-          const pillarArticle = pipeline.articles?.find((a: any) => a.type === 'PILLAR')
-          return (
-            <UltraLocalEditor 
-              article={pillarArticle} 
-              pipelineId={pipeline.id} 
-            />
-          )
-        })()}
-
-        {/* We will add more status handlers in next phases */}
+        {status === 'REVIEWING_ARTICLES' && (
+          <EditorWrapper 
+            articleId={pillarId}
+            articleContent={pillarContent}
+            pipelineId={pipeline.id} 
+          />
+        )}
       </div>
 
       <div className="mt-5">

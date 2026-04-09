@@ -31,7 +31,10 @@ export default async function OperatorDashboard() {
   const [activeProjects, activeDayRecord, appointments, userViews] = await Promise.all([
     prisma.project.findMany({
       where: {
-        team: { some: { userId } },
+        OR: [
+          { team: { some: { userId } } },
+          { createdBy: userId }
+        ],
         status: { in: ['LEAD', 'ACTIVO', 'PENDIENTE'] }
       },
       orderBy: { updatedAt: 'desc' },

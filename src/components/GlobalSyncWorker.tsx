@@ -26,23 +26,33 @@ export default function GlobalSyncWorker() {
   const syncOutbox = async () => {
     if (typeof window === 'undefined' || !navigator.onLine) return
     const items = await db.outbox.where('status').equals('pending').toArray()
-    
-    // Only process QUOTE and MATERIAL in the global sync
-    const globalItems = items.filter(i => i.type === 'QUOTE' || i.type === 'MATERIAL')
-    if (globalItems.length === 0) return
+    if (items.length === 0) return
 
-    for (const item of globalItems) {
+    for (const item of items) {
        try {
          await db.outbox.update(item.id!, { status: 'syncing' })
           let endpoint = ''
-          if (item.type === 'QUOTE') endpoint = '/api/quotes'
-          else if (item.type === 'MATERIAL') endpoint = '/api/materials'
+          let method = 'POST'
+          
+          if (item.type === 'QUOTE') { endpoint = '/api/quotes' }
+          else if (item.type === 'MATERIAL') { endpoint = '/api/materials' }
+          else if (item.type === 'MESSAGE' || item.type === 'MEDIA_UPLOAD') { endpoint = `/api/projects/${item.projectId}/messages` }
+          else if (item.type === 'EXPENSE') { endpoint = `/api/projects/${item.projectId}/expenses` }
+          else if (item.type === 'DAY_START') { endpoint = `/api/day-records` }
+          else if (item.type === 'DAY_END') { endpoint = `/api/day-records`; method = 'PUT' }
+          else if (item.type === 'PHASE_COMPLETE') { endpoint = `/api/projects/${item.projectId}/phases/${item.payload.phaseId}`; method = 'PATCH' }
           
           if (endpoint) {
              const res = await fetch(endpoint, {
-                 method: 'POST',
+                 method,
                  headers: { 'Content-Type': 'application/json' },
-                 body: JSON.stringify(item.payload)
+                 body: JSON.stringify({ 
+                   ...item.payload, 
+                   lat: item.lat, 
+                   lng: item.lng, 
+                   createdAt: item.timestamp ? new Date(item.timestamp).toISOString() : undefined,
+                   isOfflineSync: true 
+                 })
              })
              if (res.ok) await db.outbox.delete(item.id!)
              else await db.outbox.update(item.id!, { status: 'failed' })

@@ -24,12 +24,22 @@ export default function OfflinePrefetcher({ urls }: { urls: string[] }) {
       })
     }, 1000) // Delay 1s to not block initial render
 
-    // 2. Also tell the Service Worker to pre-cache these pages as full HTML
+    // 2. Also tell the Service Worker to pre-cache these pages as full HTML 
+    // AND manually fetch RSC payloads to ensure they hit the SW cache
     const swTimer = setTimeout(() => {
       if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        // A. Full page HTML caching via SW message
         navigator.serviceWorker.controller.postMessage({
           type: 'PRECACHE_URLS',
           urls
+        })
+
+        // B. Manual RSC payload caching
+        urls.forEach(url => {
+          fetch(url, {
+            headers: { 'RSC': '1' },
+            credentials: 'same-origin'
+          }).catch(() => {/* Ignore prefetch failures */})
         })
       }
     }, 3000) // Delay 3s to give SW time

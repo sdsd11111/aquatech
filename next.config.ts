@@ -1,9 +1,16 @@
 import type { NextConfig } from "next";
 import path from "path";
+const withPWA = require("@ducanh2912/next-pwa").default({
+  dest: "public",
+  sw: "sw.js", // The generated SW name
+  customWorkerDir: "public", // Where custom-sw.js is
+  disable: process.env.NODE_ENV === "development",
+  // We don't want it to cache everything automatically, as we have a custom-sw.js
+  // that handles the complex logic. next-pwa will mainly handle the manifest and build-time assets.
+});
 
-const nextConfig: NextConfig = {
+const config: NextConfig = {
   // Fix: Force correct workspace root to prevent Client Component resolution errors
-  // Without this, Next.js picks up D:\Abel paginas\package-lock.json as root
   outputFileTracingRoot: path.resolve(__dirname),
   images: {
     remotePatterns: [
@@ -19,4 +26,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withPWA(config);

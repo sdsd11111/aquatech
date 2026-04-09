@@ -144,8 +144,9 @@ export default function CalendarView({
         border: '1px solid var(--border)' 
       }}>
         {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => (
-          <div key={d} style={{ backgroundColor: 'var(--bg-deep)', padding: '10px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            {d}
+          <div key={d} className="calendar-header-cell" style={{ backgroundColor: 'var(--bg-deep)', padding: '10px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+            <span className="full-day">{d}</span>
+            <span className="short-day">{d[0]}</span>
           </div>
         ))}
 
@@ -173,7 +174,7 @@ export default function CalendarView({
             >
               {day && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <span style={{ 
+                  <span className="day-number" style={{ 
                     fontSize: '0.85rem', 
                     fontWeight: isToday ? 800 : 500, 
                     color: isToday ? 'var(--primary)' : 'var(--text)',
@@ -190,11 +191,12 @@ export default function CalendarView({
                 </div>
               )}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', flex: 1 }}>
+              <div className="day-events-container" style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', flex: 1 }}>
                 {dayEvents.map(event => (
                   <button 
                     key={event.id}
                     onClick={(e) => { e.stopPropagation(); onEditEvent(event); }}
+                    className="event-pill"
                     style={{ 
                         display: 'flex', 
                         flexDirection: 'column',
@@ -211,8 +213,8 @@ export default function CalendarView({
                         boxShadow: 'var(--shadow-sm)'
                     }}
                   >
-                    <div style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</div>
-                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                    <div className="event-title" style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</div>
+                    <div className="event-time" style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
                         {formatTimeEcuador(event.startTime)}
                     </div>
                   </button>
@@ -223,16 +225,39 @@ export default function CalendarView({
         })}
       </div>
 
-      <style>{`
+      <style jsx>{`
         .calendar-cell:hover {
             background-color: var(--bg-card-hover) !important;
         }
+        .short-day { display: none; }
         @media (max-width: 768px) {
             .calendar-container {
-                overflow-x: auto;
+                gap: var(--space-xs) !important;
+            }
+            .full-day { display: none; }
+            .short-day { display: inline; }
+            .calendar-header-cell {
+                padding: 6px !important;
+                font-size: 0.65rem !important;
             }
             .calendar-cell {
                 min-height: 80px !important;
+                padding: 4px !important;
+            }
+            .day-number {
+                width: 20px !important;
+                height: 20px !important;
+                font-size: 0.75rem !important;
+            }
+            .event-pill {
+                padding: 3px 4px !important;
+                font-size: 0.6rem !important;
+            }
+            .event-time {
+                display: none;
+            }
+            .event-title {
+                font-size: 0.55rem;
             }
         }
       `}</style>

@@ -64,7 +64,7 @@ export default async function RecursosPage({ searchParams }: RecursosPageProps) 
   });
 
   return (
-    <div className="p-6">
+    <div className="recursos-container">
       <div className="dashboard-header mb-xl" style={{ animation: 'fadeIn 0.5s ease-out' }}>
         <div>
           <h2 className="page-title">Centro de Recursos</h2>
@@ -75,9 +75,9 @@ export default async function RecursosPage({ searchParams }: RecursosPageProps) 
       </div>
 
       {/* FILA SUPERIOR: PAGOS Y APOYO */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-xl)', marginBottom: 'var(--space-2xl)' }}>
+      <div className="recursos-top-row">
         {/* SECCIÓN 1: COBROS Y PAGOS */}
-        <section style={{ flex: '1 1 350px' }}>
+        <section className="section-pagos">
           <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '1.5rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: '20px', height: '20px' }}>
               <rect x="2" y="5" width="20" height="14" rx="2" />
@@ -111,7 +111,7 @@ export default async function RecursosPage({ searchParams }: RecursosPageProps) 
         </section>
 
         {/* SECCIÓN 2: MATERIAL DE APOYO */}
-        <section style={{ flex: '2 1 600px' }}>
+        <section className="section-apoyo">
           <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '1.5rem', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: '20px', height: '20px' }}>
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -119,7 +119,7 @@ export default async function RecursosPage({ searchParams }: RecursosPageProps) 
             </svg>
             Material de Apoyo
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-lg)' }}>
+          <div className="grid-responsive-recursos">
             {generalRecursos.map((item) => (
               <div key={item.id} className="card animate-fade-in" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{ position: 'relative', height: '120px', overflow: 'hidden', background: 'var(--bg-deep)' }}>
@@ -200,18 +200,66 @@ export default async function RecursosPage({ searchParams }: RecursosPageProps) 
         )}
       </section>
 
-      <div className="card" style={{ marginTop: 'var(--space-3xl)', background: 'linear-gradient(135deg, var(--bg-card), var(--bg-deep))', border: '1px solid var(--primary-glow)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+      <div className="card help-card" style={{ marginTop: 'var(--space-3xl)', background: 'linear-gradient(135deg, var(--bg-card), var(--bg-deep))', border: '1px solid var(--primary-glow)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
           <div style={{ width: '60px', height: '60px', borderRadius: '16px', background: 'var(--primary-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: '30px', height: '30px' }}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
           </div>
-          <div>
+          <div style={{ flex: '1 1 200px' }}>
             <h4 style={{ margin: 0, fontSize: '1.2rem' }}>¿Necesitas ayuda adicional?</h4>
             <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0', fontSize: '0.9rem' }}>Contacta directamente con administración para soporte técnico o administrativo.</p>
           </div>
-          <button className="btn btn-primary" style={{ marginLeft: 'auto' }}>Contactar Soporte</button>
+          <button className="btn btn-primary" style={{ minWidth: '150px' }}>Contactar Soporte</button>
         </div>
       </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .recursos-container {
+          padding: 1.5rem;
+        }
+        .recursos-top-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: var(--space-xl);
+          margin-bottom: var(--space-2xl);
+        }
+        .section-pagos {
+          flex: 1 1 350px;
+        }
+        .section-apoyo {
+          flex: 2 1 600px;
+        }
+        .grid-responsive-recursos {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: var(--space-lg);
+        }
+        @media (max-width: 768px) {
+          .recursos-container {
+            padding: 1rem;
+          }
+          .recursos-top-row {
+            flex-direction: column;
+            gap: var(--space-lg);
+          }
+          .section-pagos, .section-apoyo {
+            flex: 1 1 auto;
+          }
+          .grid-responsive-recursos {
+            grid-template-columns: 1fr;
+          }
+          .page-title {
+            font-size: 1.5rem;
+          }
+          .help-card {
+            padding: 1rem;
+          }
+          .help-card button {
+            width: 100%;
+            margin-top: 1rem;
+          }
+        }
+      ` }} />
     </div>
   );
 }

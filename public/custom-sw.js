@@ -15,7 +15,10 @@ const PRE_CACHE = [
   '/cotizacion.jpg',
   '/manifest.json',
   '/admin/operador',
+  '/admin/inventario',
+  '/admin/cotizaciones',
   '/admin/cotizaciones/offline',
+  '/favicon.ico',
 ];
 
 // ─── INSTALL ────────────────────────────────────────────────

@@ -76,7 +76,7 @@ export default function QuoteDetailClient({ quote }: any) {
           <div style={{ padding: '40px', backgroundColor: 'white', color: '#333', fontSize: '13px', lineHeight: '1.5' }}>
             {/* Header Preview */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '40px' }}>
-              <div style={{ color: 'var(--primary)', fontSize: '2rem', fontWeight: 'bold' }}>AQUATECH</div>
+              <img src="/logo.jpg" alt="AQUA TECH" style={{ height: '60px', width: 'auto', objectFit: 'contain' }} />
               <div style={{ textAlign: 'right', border: '1px solid #ddd', padding: '15px', borderRadius: '4px' }}>
                 <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>R.U.C.: 1105048852001</div>
                 <div style={{ color: 'var(--primary)', fontWeight: 'bold' }}>COTIZACIÓN # {quote.id.toString().padStart(5, '0')}</div>

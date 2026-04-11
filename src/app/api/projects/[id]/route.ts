@@ -3,6 +3,38 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id } = await params
+    const project = await prisma.project.findUnique({
+      where: { id: Number(id) },
+      include: {
+        client: true,
+        phases: { orderBy: { displayOrder: 'asc' } },
+        team: { include: { user: true } },
+        gallery: { orderBy: { createdAt: 'desc' } },
+        expenses: { include: { user: true }, orderBy: { date: 'desc' } },
+        chatMessages: { include: { user: true, phase: true, media: true }, orderBy: { createdAt: 'desc' } },
+        dayRecords: { include: { user: true }, orderBy: { createdAt: 'desc' } }
+      }
+    })
+
+    if (!project) {
+      return NextResponse.json({ error: 'Proyecto no encontrado' }, { status: 404 })
+    }
+
+    return NextResponse.json(JSON.parse(JSON.stringify(project)))
+  } catch (error: any) {
+    console.error('Error fetching project:', error)
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+  }
+}
+
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)

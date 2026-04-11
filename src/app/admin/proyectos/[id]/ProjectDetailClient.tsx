@@ -1244,7 +1244,7 @@ export default function ProjectDetailClient({ project, availableOperators = [] }
                 </button>
                 <button 
                   className="btn btn-secondary" 
-                  onClick={() => handleDownload(`/api/projects/${project.id}/pdf`, `Ficha_${project.title.replace(/ /g, '_')}.pdf`)}
+                  onClick={() => handleDownload(`/api/projects/${project.id}/export`, `Ficha_${project.title.replace(/ /g, '_')}.json`)}
                   disabled={isDownloadingPdf}
                   style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', fontSize: '0.85rem' }}
                 >
@@ -1254,7 +1254,7 @@ export default function ProjectDetailClient({ project, availableOperators = [] }
                 {(session?.user?.role !== 'OPERADOR' && session?.user?.role !== 'SUBCONTRATISTA') && (
                   <button 
                     className="btn btn-primary" 
-                    onClick={() => handleDownload(`/api/projects/${project.id}/report`, `Reporte_${project.title.replace(/ /g, '_')}.pdf`)}
+                    onClick={() => handleDownload(`/api/projects/${project.id}/export`, `Reporte_${project.title.replace(/ /g, '_')}.json`)}
                     disabled={isGenerating}
                     style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', fontSize: '0.85rem' }}
                   >
@@ -1774,8 +1774,8 @@ export default function ProjectDetailClient({ project, availableOperators = [] }
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '20px' }}>
                 {(showAllGallery 
-                  ? (galleryFilter === 'ALL' ? gallery : gallery.filter((i: any) => i.type === galleryFilter || (galleryFilter === 'IMAGE' && i.mimeType.startsWith('image/'))))
-                  : (galleryFilter === 'ALL' ? gallery : gallery.filter((i: any) => i.type === galleryFilter || (galleryFilter === 'IMAGE' && i.mimeType.startsWith('image/')))).slice(0, GALLERY_LIMIT)
+                  ? (galleryFilter === 'ALL' ? gallery : gallery.filter((i: any) => i.type === galleryFilter || (galleryFilter === 'IMAGE' && i.mimeType?.startsWith('image/')) || (galleryFilter === 'VIDEO' && i.mimeType?.startsWith('video/')) || (galleryFilter === 'DOCUMENT' && !i.mimeType?.startsWith('image/') && !i.mimeType?.startsWith('video/'))))
+                  : (galleryFilter === 'ALL' ? gallery : gallery.filter((i: any) => i.type === galleryFilter || (galleryFilter === 'IMAGE' && i.mimeType?.startsWith('image/')) || (galleryFilter === 'VIDEO' && i.mimeType?.startsWith('video/')) || (galleryFilter === 'DOCUMENT' && !i.mimeType?.startsWith('image/') && !i.mimeType?.startsWith('video/')))).slice(0, GALLERY_LIMIT)
                 ).map((item: any) => (
                   <div key={item.id} className="group" style={{ position: 'relative', aspectRatio: '1/1', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-surface)' }}>
                     {item.mimeType.startsWith('image/') ? (

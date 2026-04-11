@@ -6,113 +6,140 @@ import { MapPin, ShieldCheck, Zap, Heart, ArrowRight } from 'lucide-react'
 export default function AboutUs() {
   const cards = [
     {
-      title: "Matriz Regional",
-      icon: <MapPin size={32} />,
-      points: ["Loja (Matriz Central)", "Malacatos (Riego Ornamental)", "Vilcabamba (Sistemas Premium)", "Yantzaza (Amazonía Industrial)"],
-      desc: "Cobertura total en el sur del Ecuador."
+      title: "Presencia Regional",
+      icon: <MapPin size={24} />,
+      items: ["Matriz Loja", "Agencia Malacatos", "Boutique Vilcabamba", "Soporte Yantzaza"],
+      accent: "#004A87"
     },
     {
-      title: "Filosofía Llave en Mano",
-      icon: <Zap size={32} />,
-      points: ["Diseño Arquitectónico", "Construcción Hidráulica", "Equipamiento de Lujo", "Soporte Post-Venta"],
-      desc: "Usted imagina, nosotros construimos."
+      title: "Modelo Llave en Mano",
+      icon: <Zap size={24} />,
+      items: ["Diseño Arquitectónico", "Construcción Civil", "Montaje Técnico", "Mantenimiento"],
+      accent: "#000000"
     },
     {
-      title: "Ingeniería de Vanguardia",
-      icon: <ShieldCheck size={32} />,
-      points: ["Piscinas Residenciales", "Sistemas de Riego", "Potabilización Avanzada", "Tratamiento de Agua"],
-      desc: "Certificación de clase mundial."
+      title: "Ingeniería de Agua",
+      icon: <ShieldCheck size={24} />,
+      items: ["Piscinas de Lujo", "Riego Automático", "Potabilización", "Bombeo Industrial"],
+      accent: "#004A87"
     },
     {
       title: "Misión Aquatech",
-      icon: <Heart size={32} />,
-      points: ["Bienestar en el Hogar", "Tecnología Sustentable", "Experiencia de 10+ años", "Compromiso de por vida"],
-      desc: "Vender tranquilidad absoluta."
+      icon: <Heart size={24} />,
+      items: ["Bienestar Hogar", "Sustentabilidad", "Calidad Alemana", "Garantía Real"],
+      accent: "#000000"
     }
   ]
 
   return (
-    <section className="bg-white py-32 md:py-48 border-t border-gray-100" id="nosotros">
-      <div className="max-w-[1280px] mx-auto px-6">
+    <section 
+      id="nosotros"
+      style={{ 
+        backgroundColor: '#FAFAFB', 
+        paddingTop: '160px', 
+        paddingBottom: '160px',
+        borderTop: '1px solid #EEEEEE'
+      }}
+    >
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px' }}>
         
-        {/* Header - Center Aligned Editorial Style */}
-        <div className="max-w-[1000px] mb-28">
-            <div className="flex items-center gap-4 mb-8">
-                <div className="w-16 h-1 lg:h-[3px] bg-[#004A87]" />
-                <span className="text-[#004A87] text-[14px] font-[900] uppercase tracking-[0.4em]">Propósito y Presencia</span>
-            </div>
-            <h2 className="text-[42px] md:text-[76px] font-[900] text-black leading-[0.95] tracking-tight mb-10">
-                Líderes en el ciclo <br/> 
-                <span className="text-[#004A87]">integral del agua.</span>
-            </h2>
-            <p className="text-[20px] md:text-[24px] text-gray-500 font-[400] max-w-[700px] leading-relaxed">
-                Aquatech nace de profesionales con larga trayectoria, consolidando el soporte técnico más avanzado del país con un modelo de boutique de ingeniería.
-            </p>
+        {/* Header Section */}
+        <div style={{ marginBottom: '100px', maxWidth: '1100px', margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', marginBottom: '32px' }}>
+             <div style={{ width: '60px', height: '4px', backgroundColor: '#004A87' }} />
+             <span style={{ fontSize: '14px', fontWeight: '900', color: '#004A87', textTransform: 'uppercase', letterSpacing: '0.4em' }}>
+                Conoce Nuestra Esencia
+             </span>
+             <div style={{ width: '60px', height: '4px', backgroundColor: '#004A87' }} />
+          </div>
+          <h2 style={{ fontSize: 'clamp(44px, 6vw, 76px)', fontWeight: '900', color: 'black', lineHeight: '1.1', letterSpacing: '-0.04em', marginBottom: '40px' }}>
+            Líderes en el ciclo <br />
+            <span style={{ color: '#004A87' }}>integral del agua.</span>
+          </h2>
+          <p style={{ fontSize: '21px', color: '#666666', lineHeight: '1.7', maxWidth: '960px', margin: '0 auto' }}>
+            Aquatech consolida una década de trayectoria en ingeniería hidráulica, transformando hogares con soluciones de alta gama respaldadas por soporte técnico certificado.
+          </p>
         </div>
 
-        {/* Card Grid - High Gravity Style */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-           {cards.map((card, idx) => (
-             <motion.div 
-                key={idx}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                className="group relative bg-[#f9f9f9] border border-gray-100 p-12 lg:p-16 hover:bg-white hover:shadow-[0_80px_160px_-40px_rgba(0,0,0,0.12)] transition-all duration-700"
-             >
-                {/* Visual Label */}
-                <div className="text-[#004A87] mb-10 opacity-80 group-hover:scale-110 group-hover:opacity-100 transition-all duration-500 origin-left">
-                    {card.icon}
-                </div>
+        {/* The Grid - Card-Based */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+          gap: '32px' 
+        }}>
+          {cards.map((card, idx) => (
+            <div
+              key={idx}
+              style={{
+                backgroundColor: 'white',
+                padding: '48px',
+                border: '1px solid #EEEEEE',
+                borderTop: `6px solid ${card.accent}`,
+                boxShadow: '0 20px 50px rgba(0,0,0,0.06)',
+                transition: 'all 0.4s ease'
+              }}
+              className="group hover:shadow-2xl translate-y-0 hover:-translate-y-2 transition-all duration-500"
+            >
+              <div style={{ marginBottom: '40px', color: '#004A87' }}>
+                {card.icon}
+              </div>
+              
+              <h3 style={{ fontSize: '24px', fontWeight: '900', color: 'black', marginBottom: '32px', letterSpacing: '-0.02em' }}>
+                {card.title}
+              </h3>
 
-                <div className="space-y-8">
-                    <div className="space-y-3">
-                        <h3 className="text-[26px] font-[900] text-black tracking-tight">{card.title}</h3>
-                        <p className="text-[14px] text-gray-400 font-[500] italic">{card.desc}</p>
-                    </div>
-
-                    <ul className="grid grid-cols-1 gap-4">
-                        {card.points.map((point, i) => (
-                            <li key={i} className="flex items-center gap-4 text-[15px] font-[600] text-gray-700">
-                                <div className="w-2 h-2 bg-[#004A87]" />
-                                {point}
-                            </li>
-                        ))}
-                    </ul>
-
-                    <div className="pt-8 border-t border-gray-100 flex items-center justify-between group-hover:text-[#004A87] transition-colors">
-                        <span className="text-[12px] font-[900] uppercase tracking-[0.3em]">Explorar detalle</span>
-                        <ArrowRight size={20} className="transform group-hover:translate-x-2 transition-transform" />
-                    </div>
-                </div>
-             </motion.div>
-           ))}
+              <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
+                {card.items.map((item, i) => (
+                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '15px', color: '#444444', fontWeight: '600', marginBottom: '16px' }}>
+                    <div style={{ width: '6px', height: '6px', backgroundColor: '#004A87' }} />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        {/* Global Slogan - Integrated Authority */}
-        <motion.div 
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="mt-40 pt-40 border-t border-gray-100 text-center space-y-16"
-        >
-            <div className="relative inline-block">
-                <h3 className="text-[36px] md:text-[60px] font-[900] text-[#004A87] italic tracking-tighter">
-                   "El Paraíso en Tu Hogar"
-                </h3>
-                <div className="absolute -bottom-4 left-0 w-full h-[6px] bg-[#004A87]/10" />
-            </div>
-            
-            <div className="flex flex-col md:flex-row gap-6 justify-center pt-8">
-                <button className="px-14 py-6 bg-black text-white text-[13px] font-[900] uppercase tracking-[0.4em] hover:bg-[#004A87] transition-all duration-500 rounded-none">
-                    Nuestra Historia
-                </button>
-                <button className="px-14 py-6 bg-white border-2 border-black text-black text-[13px] font-[900] uppercase tracking-[0.4em] hover:bg-black hover:text-white transition-all duration-500 rounded-none">
-                    Contactar Experto
-                </button>
-            </div>
-        </motion.div>
+        {/* Footer of the section */}
+        <div style={{ marginTop: '120px', textAlign: 'center' }}>
+           <h3 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: '900', fontStyle: 'italic', color: '#004A87', marginBottom: '60px', letterSpacing: '-0.02em' }}>
+              "El Paraíso en Tu Hogar"
+           </h3>
+           <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+              <button 
+                style={{
+                  backgroundColor: 'black',
+                  color: 'white',
+                  padding: '24px 50px',
+                  fontSize: '12px',
+                  fontWeight: '900',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.4em',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+                className="hover:bg-[#004A87] transition-all"
+              >
+                Nuestra Historia
+              </button>
+              <button 
+                style={{
+                  backgroundColor: 'white',
+                  color: 'black',
+                  padding: '24px 50px',
+                  fontSize: '12px',
+                  fontWeight: '900',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.4em',
+                  border: '2px solid black',
+                  cursor: 'pointer'
+                }}
+                className="hover:bg-black hover:text-white transition-all"
+              >
+                Contactar Experto
+              </button>
+           </div>
+        </div>
 
       </div>
     </section>

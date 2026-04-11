@@ -75,16 +75,14 @@ export async function POST(req: Request) {
     }
     const systemPrompt = `TU OBJETIVO: Resolver dudas de forma QUIRÚRGICA y HUMANA. 
 
-⚠️ REGLA DE ORO: SI EL USUARIO HACE UNA PREGUNTA (Ej: "¿Quién está libre?"), RESPÓNDELA Y PUNTO. NO intentes agendar nada a menos que te den una orden directa (Ej: "Agenda a...").
+⚠️ REGLA DE ORO: SI EL USUARIO HACE UNA PREGUNTA, RESPÓNDELA. NO AGENDES NADA SIN ORDEN DIRECTA.
 
-REGLAS CRÍTICAS (NO NEGOCIABLES):
-1. **NO INVENTAR (ALUCINACIONES)**: Estamos en el año 2026. Si el usuario pregunta algo que no está en la DATA, di que no sabes. PROHIBIDO usar fechas de 2024 o 2025.
-2. **HORARIO HUMANO**: PROHIBIDO usar formatos tipo "2026-04-11T19:00:00". Usa siempre: "HH:MM AM/PM" (Ej: 7:00 PM).
-3. **SEGMENTACIÓN DE INTENCIONES**:
-   - CONSULTA: Si preguntan por disponibilidad, responde CORTO y DIRECTO con nombres.
-   - ACCIÓN: Solo si piden agendar, solicita los 5 puntos (incluyendo Instrucciones).
-4. **BLOQUEO POR INSTRUCCIONES**: No des el resumen de agendamiento si no tienes las NOTAS para el operador.
-5. **ESTILO**: WhatsApp. Directo. Cero explicaciones de tu proceso.
+REGLAS DE AGENDAMIENTO (BLOQUEO CRÍTICO):
+1. **PIDE INSTRUCCIONES**: Si el usuario pide agendar pero no dio detalles/instrucciones, PREGUNTA: "¿Qué instrucciones o detalles le pongo a la tarea?" antes de dar el resumen. ES OBLIGATORIO.
+2. **CONFIRMACIÓN HUMANA**: Acepta CUALQUIER afirmación para ejecutar (Sí, Dale, Hágale, Confirma, OK, etc.). No fuerces la palabra "confirmar".
+3. **RESUMEN VISUAL**: Solo cuando tengas los 5 puntos (Operador, Tarea, Inicio, Fin, Notas), muestra el resumen con iconos (👤, 📝, 🕒, 🏁, 📋).
+4. **HORARIO HUMANO**: Usa solo "HH:MM AM/PM". Nunca ISO (nada de T19:00...). 
+5. **ESTILO**: WhatsApp. Directo. Sin explicaciones de "estoy revisando".
 
 ### EQUIPO REGISTRADO:
 ${context.operators.join('\n')}
@@ -92,7 +90,7 @@ ${context.operators.join('\n')}
 ### AGENDA DE EVENTOS:
 ${context.appointments.length > 0 
   ? context.appointments.map(a => `- ${a.operator}: ${a.title} (${a.start} a ${a.end}) [${a.status}]`).join('\n')
-  : 'Sin eventos registrados para hoy.'}`
+  : 'Sin eventos hoy.'}`
 
     // Build messages — only send last 6 messages to avoid context pollution
     const userMessages = messages || (query ? [{ role: 'user', content: query }] : [])
@@ -117,7 +115,7 @@ ${context.appointments.length > 0
             type: "function",
             function: {
               name: "crear_cita",
-              description: "Programa una cita tras confirmar 5 puntos: Operador, Tarea, Inicio, Fin e Instrucciones.",
+              description: "Ejecuta la creación tras recibir CUALQUIER confirmación (Sí, dale, ok, etc.) del resumen de 5 puntos.",
               parameters: {
                 type: "object",
                 properties: {
@@ -125,7 +123,7 @@ ${context.appointments.length > 0
                   title: { type: "string", description: "Título de la tarea." },
                   startTime: { type: "string", description: "ISO 8601 Inicio." },
                   endTime: { type: "string", description: "ISO 8601 Fin." },
-                  description: { type: "string", description: "Notas/Instrucciones para el operador. OBLIGATORIO." }
+                  description: { type: "string", description: "Notas/Instrucciones OBLIGATORIAS." }
                 },
                 required: ["operatorId", "title", "startTime", "endTime", "description"]
               }

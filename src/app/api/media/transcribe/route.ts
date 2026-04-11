@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     }
 
     const formData = await req.formData()
-    const file = formData.get('file') as Blob
+    const file = formData.get('file') as any
     const model = 'whisper-large-v3'
 
     if (!file) {
@@ -25,16 +25,9 @@ export async function POST(req: NextRequest) {
     // Prepare Groq request
     const groqFormData = new FormData()
     
-    let extension = 'm4a' // Default fallback for generic blobs without type
-    if (file.type) {
-      if (file.type.includes('webm')) extension = 'webm'
-      else if (file.type.includes('mp4')) extension = 'm4a'
-      else if (file.type.includes('ogg')) extension = 'ogg'
-      else if (file.type.includes('wav')) extension = 'wav'
-      else if (file.type.includes('mpeg')) extension = 'mp3'
-    }
-
-    const audioContent = new File([file], `audio.${extension}`, { type: file.type || 'audio/m4a' })
+    const filename = file.name || 'audio.m4a'
+    const audioContent = new File([file], filename, { type: file.type || 'audio/m4a' })
+    
     groqFormData.append('file', audioContent)
     groqFormData.append('model', model)
     groqFormData.append('language', 'es') // Spanish as default

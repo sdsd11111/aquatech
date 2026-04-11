@@ -223,7 +223,7 @@ export default function NuevoProyectoPage() {
         status: 'pending'
       })
       alert('Estás sin conexión. El proyecto se ha guardado localmente y se subirá cuando recuperes la conexión.')
-      router.push(`/admin/operador`)
+      router.back()
       return
     }
 
@@ -241,7 +241,7 @@ export default function NuevoProyectoPage() {
 
       router.push(`/admin/operador`)
     } catch (err: any) {
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || !navigator.onLine) {
         await db.outbox.add({
           type: 'PROJECT',
           projectId: 0,
@@ -250,7 +250,7 @@ export default function NuevoProyectoPage() {
           status: 'pending'
         })
         alert('Problema de red detectado. El proyecto se ha guardado localmente y se subirá automáticamente luego.')
-        router.push(`/admin/operador`)
+        router.back()
       } else {
         setError(err.message)
         setLoading(false)

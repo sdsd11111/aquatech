@@ -10,6 +10,7 @@ import BudgetBuilder, { BudgetItem } from '@/components/BudgetBuilder'
 import { generateProfessionalPDF } from '@/lib/pdf-generator'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { PROJECT_TYPES, translateType, PROJECT_CATEGORIES, translateCategory } from '@/lib/constants'
+import { db } from '@/lib/db'
 
 export default function NuevoProyectoPage() {
   const { data: session } = useSession()
@@ -211,26 +212,41 @@ export default function NuevoProyectoPage() {
     setLoading(true)
     setError('')
 
+    const payload = {
+      ...projectData,
+      subtype: projectData.type === 'OTHER' ? projectData.subtype : '',
+      client: clientData,
+      phases: phases,
+      team: selectedTeam,
+      budgetItems: budgetItems,
+      categoryList: projectData.categoryList.map(c => c === 'OTRO' ? (projectData.otherCategory || 'OTRO') : c),
+      contractTypeList: projectData.contractTypeList.map(c => c === 'OTHER' ? (projectData.otherContractType || 'OTHER') : c),
+      technicalSpecs: projectData.technicalSpecs,
+      specsAudioUrl: projectData.specsAudioUrl,
+      specsTranscription: projectData.technicalSpecs.description,
+      status: projectData.status,
+      clientId: clientData.id,
+      files: uploadedFiles
+    }
+
+    if (!navigator.onLine) {
+      await db.outbox.add({
+        type: 'PROJECT',
+        projectId: 0,
+        payload: payload,
+        timestamp: Date.now(),
+        status: 'pending'
+      })
+      alert('Estás sin conexión. El proyecto se ha guardado localmente y se subirá cuando recuperes la conexión.')
+      router.back()
+      return
+    }
+
     try {
       const resp = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...projectData,
-          subtype: projectData.type === 'OTHER' ? projectData.subtype : '',
-          client: clientData,
-          phases: phases,
-          team: selectedTeam,
-          budgetItems: budgetItems,
-          categoryList: projectData.categoryList.map(c => c === 'OTRO' ? (projectData.otherCategory || 'OTRO') : c),
-          contractTypeList: projectData.contractTypeList.map(c => c === 'OTHER' ? (projectData.otherContractType || 'OTHER') : c),
-          technicalSpecs: projectData.technicalSpecs,
-          specsAudioUrl: projectData.specsAudioUrl,
-          specsTranscription: projectData.technicalSpecs.description,
-          status: projectData.status,
-          clientId: clientData.id,
-          files: uploadedFiles
-        })
+        body: JSON.stringify(payload)
       })
 
       if (!resp.ok) {
@@ -252,8 +268,20 @@ export default function NuevoProyectoPage() {
 
       router.push(`/admin/proyectos/${newProj.id}`)
     } catch (err: any) {
-      setError(err.message)
-      setLoading(false)
+      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || !navigator.onLine) {
+        await db.outbox.add({
+          type: 'PROJECT',
+          projectId: 0,
+          payload: payload,
+          timestamp: Date.now(),
+          status: 'pending'
+        })
+        alert('Problema de red detectado. El proyecto se ha guardado localmente y se subirá automáticamente luego.')
+        router.back()
+      } else {
+        setError(err.message)
+        setLoading(false)
+      }
     }
   }
 

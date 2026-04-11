@@ -37,6 +37,7 @@ export default function OperatorDashboardClient({
   const [activeTab, setActiveTab] = useState<'PROYECTOS' | 'TAREAS' | 'CALENDARIO'>('TAREAS')
   const [appointments, setAppointments] = useState(initialAppointments)
   const [projects, setProjects] = useState(initialProjects)
+  const [selectedTask, setSelectedTask] = useState<any>(null)
 
   // Polling for live project updates
   useEffect(() => {
@@ -201,7 +202,10 @@ export default function OperatorDashboardClient({
                 >
                   <CheckCircle2 size={24} fill={task.status === 'COMPLETADA' ? 'var(--success-bg)' : 'none'}/>
                 </button>
-                <div style={{ flex: 1 }}>
+                <div 
+                  style={{ flex: 1, cursor: 'pointer' }}
+                  onClick={() => setSelectedTask(task)}
+                >
                    <h3 style={{ margin: 0, fontSize: '1.1rem', textDecoration: task.status === 'COMPLETADA' ? 'line-through' : 'none', opacity: task.status === 'COMPLETADA' ? 0.6 : 1 }}>
                      {task.title}
                    </h3>
@@ -268,12 +272,76 @@ export default function OperatorDashboardClient({
               events={appointments}
               isAdmin={false}
               onAddEvent={() => {}}
-              onEditEvent={() => {}}
+              onEditEvent={(evt) => setSelectedTask(evt)}
               viewMode="WEEK"
             />
           </div>
         )}
       </div>
+
+      {/* MODAL DETALLES DE TAREA */}
+      {selectedTask && (
+        <div className="modal-overlay" onClick={() => setSelectedTask(null)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div className="card" onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: '400px', padding: '24px', borderRadius: '16px', background: 'var(--bg-deep)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+              <h2 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--brand-primary)' }}>Detalle de Tarea</h2>
+              <button 
+                onClick={() => setSelectedTask(null)}
+                style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div style={{ marginBottom: '16px' }}>
+              <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem', letterSpacing: '1px' }}>TÍTULO</strong>
+              <div style={{ fontSize: '1.1rem', fontWeight: 600, marginTop: '4px' }}>{selectedTask.title}</div>
+            </div>
+
+            {selectedTask.description && (
+              <div style={{ marginBottom: '16px' }}>
+                <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem', letterSpacing: '1px' }}>DESCRIPCIÓN O NOTAS</strong>
+                <div style={{ marginTop: '4px', whiteSpace: 'pre-wrap', color: 'var(--text)', fontSize: '0.95rem', background: 'var(--bg-surface)', padding: '12px', borderRadius: '8px' }}>
+                  {selectedTask.description}
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginBottom: '16px', display: 'flex', gap: '20px' }}>
+              <div style={{ flex: 1 }}>
+                <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem', letterSpacing: '1px' }}>HORA DE INICIO</strong>
+                <div style={{ marginTop: '4px', fontSize: '0.95rem' }}>{formatToEcuador(selectedTask.startTime, { hour: '2-digit', minute: '2-digit' })}</div>
+              </div>
+              <div style={{ flex: 1 }}>
+                <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem', letterSpacing: '1px' }}>HORA DE FIN</strong>
+                <div style={{ marginTop: '4px', fontSize: '0.95rem' }}>{formatToEcuador(selectedTask.endTime, { hour: '2-digit', minute: '2-digit' })}</div>
+              </div>
+            </div>
+
+            {selectedTask.project && (
+              <div style={{ marginBottom: '20px' }}>
+                <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem', letterSpacing: '1px' }}>PROYECTO ASOCIADO</strong>
+                <div style={{ marginTop: '4px', fontSize: '0.95rem' }}>
+                  <Briefcase size={16} /> {selectedTask.project.title}
+                </div>
+              </div>
+            )}
+
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+               <span className={`badge ${selectedTask.status === 'COMPLETADA' ? 'badge-success' : 'badge-warning'}`}>
+                 Estado: {selectedTask.status}
+               </span>
+               <button 
+                  className="btn btn-secondary" 
+                  onClick={() => setSelectedTask(null)}
+                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+               >
+                 Cerrar
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
       <style jsx>{`
         .tab-badge {
           background: var(--danger);

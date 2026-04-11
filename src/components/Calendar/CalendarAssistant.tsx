@@ -92,7 +92,14 @@ export default function CalendarAssistant() {
       recorder.onstop = async () => {
         const mimeType = audioChunksRef.current[0]?.type || 'audio/webm'
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType })
-        await handleTranscription(audioBlob)
+        
+        let ext = 'webm'
+        if (mimeType.includes('mp4')) ext = 'm4a'
+        else if (mimeType.includes('ogg')) ext = 'ogg'
+        else if (mimeType.includes('wav')) ext = 'wav'
+        else if (mimeType.includes('mpeg')) ext = 'mp3'
+
+        await handleTranscription(audioBlob, ext)
         // Stop stream tracks
         stream.getTracks().forEach(track => track.stop())
       }
@@ -113,18 +120,23 @@ export default function CalendarAssistant() {
     }
   }
 
-  const handleTranscription = async (blob: Blob) => {
+  const handleTranscription = async (blob: Blob, ext: string) => {
     setIsLoading(true)
     try {
       const formData = new FormData()
-      formData.append('file', blob)
+      formData.append('file', blob, `audio.${ext}`)
 
       const res = await fetch('/api/media/transcribe', {
         method: 'POST',
         body: formData
       })
 
-      if (!res.ok) throw new Error('Error en transcripción')
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}))
+        console.error('API Error:', errJson)
+        throw new Error('Error en transcripción')
+      }
+      
       const data = await res.json()
       
       if (data.text) {

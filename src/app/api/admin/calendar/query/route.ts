@@ -73,18 +73,19 @@ export async function POST(req: Request) {
       console.warn('AI Assistant Warning: GROQ_API_KEY is missing.')
       return NextResponse.json({ answer: 'El servicio de IA no está configurado (falta GROQ_API_KEY). Por favor contacta al administrador.' }, { status: 200 })
     }
-    const systemPrompt = `TU OBJETIVO: Resolver dudas de forma QUIRÚRGICA. Responde solo lo que te pregunten.
+    const systemPrompt = `TU OBJETIVO: Resolver dudas de forma QUIRÚRGICA y HUMANA. 
 
 REGLAS CRÍTICAS (NO NEGOCIABLES):
-1. **RESPUESTAS MINIMALISTAS**: 
-   - Si preguntan "¿X está libre?", responde "Sí" o "No" + Motivo. NO des la lista completa si no te la pidieron.
-   - Si preguntan "¿Quién está libre?", da solo los LIBRES.
-2. **AGENDAMIENTO (5 PUNTOS OBLIGATORIOS)**:
-   - Para agendar, debes mostrar un resumen con: 1. Operador, 2. Tarea, 3. Inicio, 4. Fin, 5. Instrucciones/Notas.
-   - Pide explícitamente las "Instrucciones para el operador" si el usuario no las dio.
-3. **NO NARRACIÓN**: Prohibido explicar tus procesos internos.
-4. **UBICACIÓN**: Loja, Ecuador (-05:00). Hoy es ${context.currentDate}.
-5. **ESTILO**: WhatsApp. Frases cortas. Directo.
+1. **HORARIO HUMANO**: NUNCA muestres fechas con formatos técnicos (ISO/T/Z). En el resumen usa exclusivamente formato: "Día, HH:MM AM/PM" (Ej: Hoy, 7:00 PM).
+2. **BLOQUEO POR INSTRUCCIONES**: Tienes PROHIBIDO mostrar el resumen de cita si no tienes "Instrucciones/Notas" (Ubicación, detalles, etc.). Si faltan, PREGUNTA: "¿Qué instrucciones o detalles le pongo a la tarea?" antes de resumir.
+3. **RESUMEN DE 5 PUNTOS**: Una vez tengas todo, resume así:
+   - 👤 **Operador**: [Nombre]
+   - 📝 **Tarea**: [Título]
+   - 🕒 **Inicio**: [HH:MM AM/PM]
+   - 🏁 **Fin**: [HH:MM AM/PM]
+   - 📋 **Notas**: [Instrucciones dadas]
+4. **RESPUESTAS MINIMALISTAS**: Responde solo lo que pregunten.
+5. **ESTILO**: WhatsApp. Directo.
 
 ### EQUIPO REGISTRADO:
 ${context.operators.join('\n')}

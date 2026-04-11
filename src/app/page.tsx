@@ -4,6 +4,8 @@ import FeaturedProduct from '@/components/marketing/FeaturedProduct'
 import CategoryGrid from '@/components/marketing/CategoryGrid'
 import Footer from '@/components/marketing/Footer'
 import ScrollArrowDivider from '@/components/marketing/ScrollArrowDivider'
+import WhatsAppButton from '@/components/marketing/WhatsAppButton'
+import ScrollToTop from '@/components/marketing/ScrollToTop'
 
 // metadataBase is required in Next.js 14+ to resolve relative URLs for social sharing
 export const metadata: Metadata = {
@@ -39,6 +41,10 @@ export default function Home() {
 
       {/* Footer */}
       <Footer />
+
+      {/* Botón Flotante WhatsApp y Volver Arriba */}
+      <WhatsAppButton />
+      <ScrollToTop />
     </main>
   )
 }

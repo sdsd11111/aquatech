@@ -99,12 +99,16 @@ export default function CalendarAssistant() {
         else if (mimeType.includes('wav')) ext = 'wav'
         else if (mimeType.includes('mpeg')) ext = 'mp3'
 
+        if (audioBlob.size < 1000) {
+           console.warn("Audio blob is suspiciously small (<1KB), might be 0 seconds.");
+        }
         await handleTranscription(audioBlob, ext)
         // Stop stream tracks
         stream.getTracks().forEach(track => track.stop())
       }
 
-      recorder.start()
+      // Start recording with a 500ms timeslice to gently flush chunks and write container headers properly
+      recorder.start(500)
       mediaRecorderRef.current = recorder
       setIsRecording(true)
     } catch (err) {
@@ -115,6 +119,7 @@ export default function CalendarAssistant() {
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.requestData() // Request any lingering bits before stopping
       mediaRecorderRef.current.stop()
       setIsRecording(false)
     }
@@ -222,8 +227,10 @@ export default function CalendarAssistant() {
                           className={`mic-btn ${isRecording ? 'active' : ''}`}
                           onMouseDown={startRecording}
                           onMouseUp={stopRecording}
+                          onMouseLeave={stopRecording}
                           onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
                           onTouchEnd={(e) => { e.preventDefault(); stopRecording(); }}
+                          onTouchCancel={(e) => { e.preventDefault(); stopRecording(); }}
                         >
                            {isRecording ? <div className="recording-timer">{recordingDuration}s</div> : <Mic size={20} />}
                         </button>

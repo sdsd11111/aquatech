@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 const slides = [
   {
     image: '/aquatech_main_banner_lifestyle_1775927332337.png',
+    mobileImage: '/aquatech_main_banner_lifestyle_1775927332337.png', // Optional: fallbacks to main image
     title: 'Construye hoy,',
     highlight: 'disfruta siempre.',
     promo: 'Difiérelo a 12 meses',
@@ -15,6 +16,7 @@ const slides = [
   },
   {
     image: '/aquatech_piletas_fountain_1775928691030.png',
+    mobileImage: '/aquatech_piletas_fountain_1775928691030.png',
     title: 'El arte del',
     highlight: 'agua en movimiento.',
     promo: 'Piletas & Cascadas Pro',
@@ -22,6 +24,7 @@ const slides = [
   },
   {
     image: '/aquatech_modern_jacuzzi_clean_1775927527209.png',
+    mobileImage: '/aquatech_modern_jacuzzi_clean_1775927527209.png',
     title: 'Tu paraíso',
     highlight: 'de relajación.',
     promo: 'Hidromasajes Premium',
@@ -55,13 +58,16 @@ export default function Hero() {
           className="absolute inset-0"
         >
           {/* Background Image */}
-          <Image 
-            src={slides[index].image} 
-            alt="Aquatech Slide" 
-            fill 
-            className="object-cover object-center"
-            priority
-          />
+          <picture>
+            <source media="(max-width: 768px)" srcSet={slides[index].mobileImage || slides[index].image} />
+            <Image 
+              src={slides[index].image} 
+              alt="Aquatech Slide" 
+              fill 
+              className="object-cover object-center"
+              priority
+            />
+          </picture>
           <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent" />
         </motion.div>
       </AnimatePresence>

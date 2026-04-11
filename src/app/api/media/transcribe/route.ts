@@ -9,26 +9,43 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    const { audio, ext } = await req.json()
+    let audio: string | undefined
+    let ext = 'webm'
+    let buffer: Buffer
 
-    if (!audio) {
-      return NextResponse.json({ error: 'No se recibió audio' }, { status: 400 })
-    }
-
-    const groqApiKey = process.env.GROQ_API_KEY
-    if (!groqApiKey) {
-      return NextResponse.json({ error: 'Configuración de IA faltante' }, { status: 500 })
-    }
-
-    // Log diagnostic info to Vercel logs
-    const buffer = Buffer.from(audio, 'base64')
+    const contentTypeHeader = req.headers.get('content-type') || ''
     
-    if (buffer.byteLength < 500) {
+    if (contentTypeHeader.includes('multipart/form-data')) {
+      const formData = await req.formData()
+      const file = formData.get('file') as File
+      if (file) {
+        const arrayBuffer = await file.arrayBuffer()
+        buffer = Buffer.from(arrayBuffer)
+        ext = file.name.split('.').pop() || 'webm'
+      } else {
+        return NextResponse.json({ error: 'No se recibió archivo' }, { status: 400 })
+      }
+    } else {
+      const body = await req.json()
+      audio = body.audio
+      ext = body.ext || 'webm'
+      if (!audio) {
+        return NextResponse.json({ error: 'No se recibió audio' }, { status: 400 })
+      }
+      buffer = Buffer.from(audio, 'base64')
+    }
+
+    if (buffer.byteLength < 100) { // Menos de 100 bytes is invalid
       console.warn(`Buffer too short: ${buffer.byteLength} bytes`);
       return NextResponse.json({ error: 'Audio demasiado corto o vacío (servidor)' }, { status: 400 })
     }
 
     console.log(`Transcribe request: Buffer size=${buffer.byteLength}, ext=${ext}`);
+
+    const groqApiKey = process.env.GROQ_API_KEY
+    if (!groqApiKey) {
+      return NextResponse.json({ error: 'Configuración de IA faltante' }, { status: 500 })
+    }
 
     const mimeMap: Record<string, string> = {
       'webm': 'audio/webm',

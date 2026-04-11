@@ -28,9 +28,6 @@ export default function Home() {
       {/* Spacing with Clickable Black Arrows */}
       <ScrollArrowDivider />
 
-      {/* Spacing before next section */}
-      <div className="h-20 bg-white" />
-
       {/* Featured Focus: Horizontal Banner Sin Texto */}
       <FeaturedProduct />
 

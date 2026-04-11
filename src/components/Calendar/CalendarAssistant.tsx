@@ -45,21 +45,21 @@ export default function CalendarAssistant() {
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [isRecording])
 
-  const handleSend = async (text: string, skipUIUpdate = false) => {
+  const handleSend = async (text: string, skipUIUpdate = false, customMessages?: Message[]) => {
     if (!text.trim() || isLoading) return
     
-    const userMsg: Message = { role: 'user', content: text }
     let updatedMessagesForAI: Message[]
 
-    if (!skipUIUpdate) {
+    if (customMessages) {
+      updatedMessagesForAI = customMessages
+    } else if (!skipUIUpdate) {
+      const userMsg: Message = { role: 'user', content: text }
       setMessages(prev => [...prev, userMsg])
       updatedMessagesForAI = [...messages, userMsg]
     } else {
-      // Si saltamos el update, asumimos que el mensaje ya fue modificado en la UI
-      // pero necesitamos incluirlo en la llamada a la API
-      updatedMessagesForAI = [...messages.map(m => 
+      updatedMessagesForAI = messages.map(m => 
         m.content.includes('transcribiendo...') ? { ...m, content: text } : m
-      )]
+      )
     }
 
     setInput('')
@@ -95,10 +95,14 @@ export default function CalendarAssistant() {
 
   const startRecording = async () => {
     try {
+      if (typeof window !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(50) // Feedback táctil
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       
       const getValidMimeType = () => {
-        const types = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm', 'audio/aac', 'audio/ogg'];
+        const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/aac', 'audio/mp4'];
         for (const t of types) {
           if (MediaRecorder.isTypeSupported(t)) return t;
         }
@@ -106,55 +110,64 @@ export default function CalendarAssistant() {
       }
 
       const mime = getValidMimeType();
-      const recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      const recorder = new MediaRecorder(stream, { mimeType: mime })
+      const chunks: Blob[] = []
       
-      audioChunksRef.current = []
-      setCapturedSize(0)
-
       recorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) {
-          audioChunksRef.current.push(e.data)
-          // Update visual size for user diagnostic
-          const totalSize = audioChunksRef.current.reduce((acc, chunk) => acc + chunk.size, 0)
-          setCapturedSize(Math.round(totalSize / 1024))
+          chunks.push(e.data)
+          setCapturedSize(prev => prev + Math.round(e.data.size / 1024))
         }
       }
 
       recorder.onstop = async () => {
-        const finalMime = mime || 'audio/webm';
-        const audioBlob = new Blob(audioChunksRef.current, { type: finalMime })
-        
-        let ext = 'webm'
-        if (finalMime.includes('mp4')) ext = 'm4a'
-        else if (finalMime.includes('ogg')) ext = 'ogg'
-        else if (finalMime.includes('wav')) ext = 'wav'
-        else if (finalMime.includes('aac')) ext = 'aac'
+        const audioBlob = new Blob(chunks, { type: mime || 'audio/webm' })
+        setCapturedSize(Math.round(audioBlob.size / 1024))
 
-        if (audioBlob.size < 3000) {
-           console.warn(`Audio too small: ${audioBlob.size} bytes (${finalMime}), skipping.`);
-           setMessages(prev => [...prev, { role: 'assistant', content: `El audio fue muy corto o vacío (${Math.round(audioBlob.size/1024)} KB). Por favor mantén presionado y habla claro.` }])
+        if (audioBlob.size < 500) { // Menos de medio KB es vacío
+           console.warn(`Audio descartado por tamaño: ${audioBlob.size} bytes`);
+           setMessages(prev => [...prev, { 
+             role: 'assistant', 
+             content: `El audio fue muy corto o vacío (${audioBlob.size} bytes). Asegúrate de que el micrófono esté limpio y habla fuerte.` 
+           }])
            stream.getTracks().forEach(track => track.stop())
            return
         }
 
-        console.log(`Sending Audio: size=${audioBlob.size}, type=${finalMime}, ext=${ext}`);
+        const ext = mime.includes('mp4') ? 'm4a' : 'webm'
+        console.log(`Grabación finalizada: ${audioBlob.size} bytes, typo: ${mime}`);
         await handleTranscription(audioBlob, ext)
         stream.getTracks().forEach(track => track.stop())
       }
 
-      recorder.start(500) // Slightly longer slice for better stability on mobile
+      audioChunksRef.current = chunks
       mediaRecorderRef.current = recorder
+      
+      recorder.start(200) // Chunks frecuentes para mantener el flujo
+      setRecordingDuration(0)
       setIsRecording(true)
+      setCapturedSize(0)
+
+      timerRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1)
+      }, 1000)
+
     } catch (err) {
-      console.error('No se pudo acceder al micrófono:', err)
-      alert('Error: No se pudo acceder al micrófono. Verifica los permisos en tu navegador.')
+      console.error('Error al iniciar micrófono:', err)
+      alert('Error de micrófono: Por favor otorga permisos o verifica que otra app no lo esté usando.')
     }
   }
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+  const stopRecording = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop()
       setIsRecording(false)
+      if (timerRef.current) clearInterval(timerRef.current)
     }
   }
 
@@ -199,12 +212,18 @@ export default function CalendarAssistant() {
       
       if (data.text) {
         // Actualizar el mensaje de audio con la transcripción
-        setMessages(prev => prev.map(m => 
+        const finalMessages = messages.map(m => 
           m.audioUrl === audioUrl 
-            ? { ...m, content: `🎤 **Audio transcripto:**\n\n${data.text}` } 
+            ? { ...m, content: `🎤 **Transcripción:** ${data.text}` } 
             : m
-        ))
-        await handleSend(data.text, true) // true para no volver a agregarlo a la UI
+        )
+        setMessages(finalMessages)
+        
+        // Ejecutar handleSend con la lista de mensajes YA actualizada para evitar carrera de estados
+        const aiMessages = finalMessages.map(m => 
+          m.audioUrl === audioUrl ? { ...m, content: data.text } : m
+        )
+        await handleSend(data.text, true, aiMessages)
       }
     } catch (error: any) {
       setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${error.message || 'No pude entender el audio. ¿Podrías repetirlo?'}` }])

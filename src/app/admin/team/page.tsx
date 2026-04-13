@@ -50,7 +50,7 @@ export default function TeamPage() {
 
   // Handle Role Selection Presets
   useEffect(() => {
-    const adminModules = ['dashboard', 'marketing', 'blog', 'calendario', 'proyectos', 'equipo', 'reportes', 'cotizaciones', 'inventario', 'recursos']
+    const adminModules = ['dashboard', 'marketing', 'blog', 'calendario', 'proyectos', 'proyectos_admin', 'equipo', 'reportes', 'cotizaciones', 'inventario', 'recursos']
     const operatorModules = ['proyectos', 'cotizaciones', 'inventario', 'recursos']
     const subModules = ['proyectos']
 
@@ -398,7 +398,8 @@ export default function TeamPage() {
                     { slug: 'marketing', label: 'Marketing', icon: '🚀' },
                     { slug: 'blog', label: 'Blog', icon: '📝' },
                     { slug: 'calendario', label: 'Calendario', icon: '📅' },
-                    { slug: 'proyectos', label: 'Proyectos', icon: '🏗️' },
+                    { slug: 'proyectos', label: 'Proyectos Operador', icon: '🏗️' },
+                    { slug: 'proyectos_admin', label: 'Proyectos Admin', icon: '🏢' },
                     { slug: 'equipo', label: 'Equipo', icon: '👥' },
                     { slug: 'reportes', label: 'Reportes', icon: '📁' },
                     { slug: 'cotizaciones', label: 'Cotizaciones', icon: '💰' },

@@ -3,10 +3,10 @@ import { UserRole } from '@prisma/client'
 export type Role = 'ADMIN' | 'ADMINISTRADORA' | 'OPERATOR' | 'SUBCONTRATISTA' | 'SUPERADMIN' | 'ADMINISTRADOR'
 
 const ROLE_PERMISSIONS_DEFAULT: Record<string, string[]> = {
-  'SUPERADMIN': ['dashboard', 'marketing', 'blog', 'calendario', 'proyectos', 'equipo', 'reportes', 'cotizaciones', 'inventario', 'recursos'],
-  'ADMIN': ['dashboard', 'marketing', 'blog', 'calendario', 'proyectos', 'equipo', 'reportes', 'cotizaciones', 'inventario', 'recursos'],
-  'ADMINISTRADOR': ['dashboard', 'marketing', 'blog', 'calendario', 'proyectos', 'equipo', 'reportes', 'cotizaciones', 'inventario', 'recursos'],
-  'ADMINISTRADORA': ['dashboard', 'marketing', 'blog', 'calendario', 'proyectos', 'equipo', 'reportes', 'cotizaciones', 'inventario', 'recursos'],
+  'SUPERADMIN': ['dashboard', 'marketing', 'blog', 'calendario', 'proyectos', 'proyectos_admin', 'equipo', 'reportes', 'cotizaciones', 'inventario', 'recursos'],
+  'ADMIN': ['dashboard', 'marketing', 'blog', 'calendario', 'proyectos', 'proyectos_admin', 'equipo', 'reportes', 'cotizaciones', 'inventario', 'recursos'],
+  'ADMINISTRADOR': ['dashboard', 'marketing', 'blog', 'calendario', 'proyectos', 'proyectos_admin', 'equipo', 'reportes', 'cotizaciones', 'inventario', 'recursos'],
+  'ADMINISTRADORA': ['dashboard', 'marketing', 'blog', 'calendario', 'proyectos', 'proyectos_admin', 'equipo', 'reportes', 'cotizaciones', 'inventario', 'recursos'],
   'OPERATOR': ['proyectos', 'cotizaciones', 'inventario', 'recursos'],
   'OPERADOR': ['proyectos', 'cotizaciones', 'inventario', 'recursos'],
   'SUBCONTRATISTA': ['proyectos']

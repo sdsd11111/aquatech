@@ -34,15 +34,29 @@ export async function POST(
     // So we do NOT update quote.projectId or quote.isBudget.
     
     const clientName = quote.clientName || quote.client?.name || 'Cliente'
-    const chatContent = `📤 COTIZACIÓN COMPARTIDA (#${quote.id})\nPara: ${clientName}\n\n${message || 'Se ha compartido esta cotización para revisión.'}\n\nTotal: $${Number(quote.totalAmount).toFixed(2)}`
+    
+    // Build the PDF URL for the quote
+    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : 'http://localhost:3000'
+    const pdfUrl = `${baseUrl}/admin/cotizaciones/${quoteId}`
+    
+    const chatContent = `📤 COTIZACIÓN COMPARTIDA (#${quote.id})\nPara: ${clientName}\n\n${message || 'Se ha compartido esta cotización para revisión.'}\n\nTotal: $${Number(quote.totalAmount).toFixed(2)}\n\n📄 Ver cotización completa:`
 
-    // Create bitácora message
+    // Create bitácora message with DOCUMENT type and MediaFile
     const msg = await prisma.chatMessage.create({
       data: {
         projectId: Number(projectId),
         userId: Number(session.user.id),
         content: chatContent,
-        type: 'TEXT'
+        type: 'DOCUMENT',
+        media: {
+           create: {
+             filename: `Cotización #${quote.id} - ${clientName}.pdf`,
+             mimeType: 'application/pdf',
+             url: pdfUrl
+           }
+        }
       }
     })
 
@@ -52,3 +66,4 @@ export async function POST(
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }
+

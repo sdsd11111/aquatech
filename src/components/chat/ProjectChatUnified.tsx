@@ -875,22 +875,13 @@ export default function ProjectChatUnified({
           display: flex;
           flex-direction: column;
           height: 100%;
-          max-height: 100%;
-          background-color: #0b141a; /* Dark WA color */
+          width: 100%;
+          background-color: #0b141a;
           background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
           background-size: 400px;
           position: relative;
-          color: #e9edef;
-        }
-
-        .whatsapp-chat-container {
-          display: flex;
-          flex-direction: column;
-          height: 100%;
-          width: 100%;
-          background-color: #0b141a;
-          position: relative;
           overflow: hidden;
+          color: #e9edef;
         }
 
         /* --- HEADER --- */
@@ -1129,12 +1120,14 @@ export default function ProjectChatUnified({
         }
         .input-container {
           flex: 1;
+          min-width: 0;
           background-color: #202c33;
           border-radius: 28px;
           display: flex;
           align-items: center;
-          padding: 8px 16px;
-          min-height: 54px;
+          padding: 4px 8px 4px 16px;
+          min-height: 48px;
+          gap: 2px;
         }
         .input-container textarea {
           flex: 1;
@@ -1164,11 +1157,12 @@ export default function ProjectChatUnified({
           background: none;
           border: none;
           color: #8696a0;
-          padding: 8px;
+          padding: 6px;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
+          flex-shrink: 0;
         }
 
         /* --- MODALS --- */
@@ -1265,15 +1259,23 @@ export default function ProjectChatUnified({
             font-size: 0.7rem;
           }
           .input-container {
-            padding: 6px 12px;
-            min-height: 48px;
+            padding: 4px 6px 4px 12px;
+            min-height: 44px;
           }
           .input-container textarea {
             font-size: 0.95rem;
+            padding: 8px 4px;
           }
           .btn-send {
             width: 42px;
             height: 42px;
+          }
+          .input-row {
+            gap: 6px;
+          }
+          .chat-footer {
+            padding: 6px 8px;
+            padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
           }
         }
       `}</style>

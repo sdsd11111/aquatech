@@ -537,13 +537,13 @@ export default function TeamMemberPage() {
                     { slug: 'marketing', label: 'Marketing' },
                     { slug: 'blog', label: 'Blog' },
                     { slug: 'calendario', label: 'Calendario' },
-                    { slug: 'proyectos', label: 'Proyectos' },
+                    { slug: 'proyectos', label: 'Proyectos Operador' },
+                    { slug: 'proyectos_admin', label: 'Proyectos Admin' },
                     { slug: 'equipo', label: 'Equipo' },
                     { slug: 'reportes', label: 'Reportes' },
                     { slug: 'cotizaciones', label: 'Cotizaciones' },
                     { slug: 'inventario', label: 'Inventario' },
-                    { slug: 'recursos', label: 'Recursos' },
-                    { slug: 'proyectos_admin', label: 'Admin Proyectos (Ver Todos)' }
+                    { slug: 'recursos', label: 'Recursos' }
                   ].map(module => {
                     const currentPerms = getPermissionsArray(member.permissions, member.role)
                     const isChecked = currentPerms.includes(module.slug)

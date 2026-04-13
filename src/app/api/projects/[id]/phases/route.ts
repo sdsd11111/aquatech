@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { isAdmin } from '@/lib/rbac'
+import { notifyProjectTeam } from '@/lib/push'
 
 export async function POST(
   request: Request,
@@ -37,6 +38,17 @@ export async function POST(
         displayOrder: displayOrder || 0
       }
     })
+
+    const project = await prisma.project.findUnique({ where: { id: projectId }, select: { title: true } })
+
+    // Notify project team about new phase
+    notifyProjectTeam(
+      projectId, Number(session.user.id),
+      `📋 Nueva tarea en: ${project?.title || 'Proyecto'}`,
+      `Se agregó la tarea: ${title}`,
+      `/admin/operador/proyecto/${projectId}`,
+      `phase-${projectId}`
+    )
 
     return NextResponse.json(newPhase, { status: 201 })
   } catch (error) {

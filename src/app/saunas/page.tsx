@@ -11,29 +11,29 @@ import WhatsAppButton from '@/components/marketing/WhatsAppButton'
 import ScrollToTop from '@/components/marketing/ScrollToTop'
 
 const workProcess = [
-  { number: "01", title: "Asesoría", desc: "Consultoría técnica personalizada en sitio.", icon: <Users size={20} />, img: "https://cesarweb.b-cdn.net/home/showroom_interior.webp" },
-  { number: "02", title: "Ingeniería", desc: "Diseño y modelado 3D de alta precisión.", icon: <Cpu size={20} />, img: "https://cesarweb.b-cdn.net/home/detalle_ingenieria.webp" },
-  { number: "03", title: "Producción", desc: "Ensamblaje con tecnología certificada IBAX.", icon: <Settings size={20} />, img: "https://cesarweb.b-cdn.net/home/equipo_trabajo.webp" },
-  { number: "04", title: "QA & Test", desc: "Pruebas de presión e hidromasaje rigurosas.", icon: <ShieldCheck size={20} />, img: "https://cesarweb.b-cdn.net/home/matriz_frente.webp" },
-  { number: "05", title: "Entrega", desc: "Instalación experta y garantía Aquatech.", icon: <Award size={20} />, img: "https://cesarweb.b-cdn.net/home/locales-lifestyle.webp" }
+  { number: "01", title: "Ingeniería", desc: "Levantamiento, diseño y planificación estructural del sauna basándonos en tu espacio disponible.", icon: <Users size={20} />, img: "https://cesarweb.b-cdn.net/home/detalle_ingenieria.webp" },
+  { number: "02", title: "Carpintería", desc: "Selección de maderas nobles y manufactura del revestimiento con aislamiento térmico experto.", icon: <Cpu size={20} />, img: "https://cesarweb.b-cdn.net/home/equipo_trabajo.webp" },
+  { number: "03", title: "Equipamiento", desc: "Elección del generador de calor adecuado (eléctrico o estándar a gas) para máxima eficiencia.", icon: <Settings size={20} />, img: "https://cesarweb.b-cdn.net/home/matriz_frente.webp" },
+  { number: "04", title: "QA & Control", desc: "Verificación de la retención calórica y calibración de termostatos PTC con tablero digital.", icon: <ShieldCheck size={20} />, img: "https://cesarweb.b-cdn.net/home/locales-lifestyle.webp" },
+  { number: "05", title: "Entrega", desc: "Llave en mano, pruebas de funcionamiento y pautas de mantenimiento preventivo.", icon: <Award size={20} />, img: "https://cesarweb.b-cdn.net/home/showroom_interior.webp" }
 ]
 
 const iconicModels = [
-  { name: "Modelo DUO", line: "Premium Spa", href: "/hidromasajes/jacuzzis", img: "https://cesarweb.b-cdn.net/Hidromasaje-Aquatech/model-duo.webp" },
-  { name: "Modelo MERENGUE", line: "Social Life", href: "/hidromasajes/jacuzzis", img: "https://cesarweb.b-cdn.net/Hidromasaje-Aquatech/model-merengue.webp" },
-  { name: "Relax Elite", line: "Wellness Line", href: "/hidromasajes/jacuzzis", img: "https://cesarweb.b-cdn.net/Hidromasaje-Aquatech/model-relax.webp" },
-  { name: "Zen Luxury", line: "Oriental Style", href: "/hidromasajes/jacuzzis", img: "https://cesarweb.b-cdn.net/Hidromasaje-Aquatech/hero-hidromasaje.webp" },
+  { name: "Generador Emaux 9KW", line: "Electric Series", href: "#", img: "https://cesarweb.b-cdn.net/home/hero-slider-3.webp" },
+  { name: "Sistema Caldera Gas 20m³", line: "Commercial", href: "#", img: "https://cesarweb.b-cdn.net/home/showroom_interior.webp" },
+  { name: "Controlador Digital Emaux", line: "Wellness Line", href: "#", img: "https://cesarweb.b-cdn.net/home/detalle_ingenieria.webp" },
+  { name: "Termostato PTC Alta Precisión", line: "Ingeniería", href: "#", img: "https://cesarweb.b-cdn.net/home/equipo_trabajo.webp" },
 ]
 
 const faqs = [
-  { q: "¿QUÉ TIEMPO DE GARANTÍA OFRECEN?", a: "Nuestros hidromasajes cuentan con 2 años de garantía en la estructura autoportante y 1 año sobre los equipos electrónicos y motores." },
-  { q: "¿HACEN ENVÍOS E INSTALACIÓN A OTRAS PROVINCIAS?", a: "Llegamos a nivel nacional. Coordinamos el envío directo y ofrecemos soporte técnico continuo a tu instalador o plomero de confianza para un encaje perfecto." },
-  { q: "¿SE PUEDE PERSONALIZAR LA CANTIDAD DE JETS?", a: "Totalmente. Al ser fabricantes directos, podemos potenciar cualquier modelo añadiendo mayor flujo de presión, jets focalizados o cromoterapia profesional de alta intensidad." },
-  { q: "¿QUÉ INSTALACIONES PREVIAS NECESITO?", a: "Solo requieres de un punto de agua cercano, un desagüe estándar a nivel de piso y un tomacorriente dedicado de 110V o 220V (dependiendo de la potencia técnica final)." },
-  { q: "¿CUÁL ES EL TIEMPO DE FABRICACIÓN?", a: "Nuestros modelos listos en stock se envían en un máximo de 48h. Para aquellos equipos 100% personalizados y configurados a medida tomamos entre 8 y 12 días laborables." },
+  { q: "¿PUEDEN DISEÑAR UN SAUNA A LA MEDIDA DE MI ESPACIO?", a: "Sí, nos encargamos de plasmar tus ideas creando espacios exclusivos y únicos, adaptándonos completamente a las medidas e irregularidades estructurales de tu casa u hotel." },
+  { q: "¿QUÉ TIPO DE ENERGÍA ES MEJOR PARA MI SAUNA?", a: "Depende estrictamente del volumen métrico del cuarto. Ofrecemos equipos generadores eléctricos compactos (ej. Emaux de 9KW) para tamaño residencial, o sistemas integrados a gas, ideales para establecimientos comerciales que alcanzan los 20m³ o más." },
+  { q: "¿EL SAUNA INCLUYE LA CARPINTERÍA E INSTALACIÓN?", a: "Totalmente. Brindamos una solución 'llave en mano' que incorpora la madera, el correcto aislamiento térmico en paredes/techo, la instalación electromecánica y configuración del termostato." },
+  { q: "¿TIENEN COBERTURA TÉCNICA EN ZONAS RURALES?", a: "Por supuesto, no solo construimos localmente. Contamos con delegaciones estratégicas que nos permiten desplegar personal a Loja, Malacatos, Vilcabamba, Yantzaza y otros cantones de toda la zona sur." },
+  { q: "¿QUÉ MANTENIMIENTO REQUIERE UNA CABINA SECA?", a: "El mantenimiento es mínimo comparado con áreas de vapor total. Aquatech provee el recambio de las piedras volcánicas, calibración de generadores, y mantenimiento a los controles digitales para seguridad del usuario." },
 ]
 
-export default function HidromasajesPage() {
+export default function SaunasPage() {
   const [activeFaq, setActiveFaq] = useState<number | null>(0)
 
   return (
@@ -92,7 +92,7 @@ export default function HidromasajesPage() {
           .cta-side, .faq-side {
             flex: 0 0 100% !important;
             width: 100% !important;
-            padding: 60px 24px !important; /* Reduced padding for mobile */
+            padding: 60px 24px !important;
           }
           .work-items-container {
              flex-direction: row !important;
@@ -159,14 +159,14 @@ export default function HidromasajesPage() {
         .mobile-pagination { display: none; }
       `}</style>
 
-      {/* Hero Section - RESTORED TO 95VH IMPACT */}
+      {/* Hero Section */}
       <section className="relative h-[95vh] flex flex-col items-center justify-center overflow-hidden bg-black">
         <motion.div 
           initial={{ scale: 1.1, opacity: 0 }}
           animate={{ scale: 1, opacity: 0.6 }}
           transition={{ duration: 3 }}
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('https://cesarweb.b-cdn.net/Hidromasaje-Aquatech/hero-hidromasaje.webp')" }}
+          style={{ backgroundImage: "url('https://cesarweb.b-cdn.net/home/hero-slider-3.webp')" }}
         />
         <div className="absolute inset-0 bg-black/40 z-0"></div>
         
@@ -177,8 +177,8 @@ export default function HidromasajesPage() {
             transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
             className="text-5xl sm:text-6xl md:text-[110px] font-black text-white mb-10 tracking-tighter leading-[0.9] md:leading-[0.8] text-center"
           >
-            Hidromasaje.<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#004A87] to-[#0070C0]">Excelencia Pura.</span>
+            Saunas Secos.<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#004A87] to-[#0070C0]">El Paraíso en tu Hogar.</span>
           </motion.h1>
 
           <Link 
@@ -194,8 +194,8 @@ export default function HidromasajesPage() {
       <section className="section-gap bg-white">
         <div className="central-container flex flex-col items-center">
           <div className="text-center mb-16 md:mb-28 px-4">
-            <span className="text-[#004A87] font-black uppercase tracking-[0.6em] md:tracking-[0.8em] text-[8px] md:text-[10px] mb-6 md:mb-8 block font-brand">Ingeniería Aquatech</span>
-            <h2 className="text-4xl md:text-[80px] font-black text-black mb-6 md:mb-8 tracking-tighter uppercase whitespace-normal md:whitespace-nowrap leading-none">Modelos Icónicos</h2>
+            <span className="text-[#004A87] font-black uppercase tracking-[0.6em] md:tracking-[0.8em] text-[8px] md:text-[10px] mb-6 md:mb-8 block font-brand">Ingeniería Térmica Premium</span>
+            <h2 className="text-4xl md:text-[80px] font-black text-black mb-6 md:mb-8 tracking-tighter uppercase whitespace-normal md:whitespace-nowrap leading-none">Equipos y Controles</h2>
             <div className="w-16 md:w-24 h-1.5 md:h-2 bg-[#004A87] mx-auto"></div>
           </div>
 
@@ -245,8 +245,8 @@ export default function HidromasajesPage() {
           
           <div style={{ position: 'relative', zIndex: 10, width: '100%' }}>
             <div style={{ marginBottom: '50px' }}>
-              <span style={{ color: '#004A87', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.6em', fontSize: '10px' }}>Process & Intelligence</span>
-              <h2 style={{ fontSize: '60px', fontWeight: 900, color: 'black', textTransform: 'uppercase', lineHeight: '1', margin: '20px 0', letterSpacing: '-0.02em' }}>Línea de<br/><span style={{ color: '#004A87' }}>Trabajo</span></h2>
+              <span style={{ color: '#004A87', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.6em', fontSize: '10px' }}>Proceso Exclusivo</span>
+              <h2 style={{ fontSize: '60px', fontWeight: 900, color: 'black', textTransform: 'uppercase', lineHeight: '1', margin: '20px 0', letterSpacing: '-0.02em' }}>Cabañas de<br/><span style={{ color: '#004A87' }}>Madera</span></h2>
               <div style={{ width: '100px', height: '8px', backgroundColor: '#004A87', marginTop: '30px' }}></div>
               <div className="md:hidden mt-6 text-[#004A87] font-black text-[10px] uppercase tracking-widest flex items-center gap-2 animate-pulse">
                 Deslizar lateralmente para ver más <ChevronRight size={14} />
@@ -267,7 +267,6 @@ export default function HidromasajesPage() {
                     alignItems: 'center',
                     position: 'relative'
                   }}>
-                    {/* Step Dot */}
                     <div className="step-dot" style={{ 
                       width: '80px', 
                       height: '80px', 
@@ -283,7 +282,6 @@ export default function HidromasajesPage() {
                       <span style={{ color: 'white', fontWeight: 900, fontSize: '24px' }}>{step.number}</span>
                     </div>
 
-                    {/* Thumbnail / Image preview */}
                     <div className="step-img-container" style={{ width: '150px', height: '100px', flexShrink: 0, overflow: 'hidden', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
                       <img src={step.img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={step.title} />
                     </div>
@@ -296,7 +294,6 @@ export default function HidromasajesPage() {
                 ))}
               </div>
               
-              {/* Pagination indicators only visible on mobile via CSS */}
               <div className="mobile-pagination">
                 {workProcess.map((_, i) => (
                   <div key={i} className="pagination-dot"></div>
@@ -318,14 +315,14 @@ export default function HidromasajesPage() {
           minWidth: 0
         }}>
            <div className="quote-form-card" style={{ width: '100%', backgroundColor: 'white', padding: '50px', boxShadow: '50px 50px 0px rgba(0,0,0,0.2)' }}>
-              <DynamicQuoteForm categoryName="Hidromasajes" />
+              <DynamicQuoteForm categoryName="Saunas" />
            </div>
         </div>
       </section>
 
       {/* Nuevo Catálogo Universal Integrado */}
       <section id="catalogo">
-        <UniversalCatalog defaultCategory="Hidromasajes" />
+        <UniversalCatalog defaultCategory="Saunas" />
       </section>
 
       {/* 50/50 CTA y Preguntas Frecuentes (FAQ) - FULL WIDTH */}
@@ -337,7 +334,7 @@ export default function HidromasajesPage() {
             {/* Lado Izquierdo: CTA Estructural */}
             <div className="cta-side" style={{ 
               backgroundColor: '#050505', 
-              backgroundImage: 'url("https://cesarweb.b-cdn.net/Hidromasaje-Aquatech/hero-hidromasaje.webp")',
+              backgroundImage: 'url("https://cesarweb.b-cdn.net/home/hero-slider-3.webp")',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               padding: '80px 60px', 
@@ -350,24 +347,23 @@ export default function HidromasajesPage() {
               overflow: 'hidden',
               boxSizing: 'border-box'
             }}>
-               {/* Overlay oscuro para no perder legibilidad del texto */}
                <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(5, 5, 5, 0.85)', zIndex: 1 }}></div>
                
                <div style={{ zIndex: 10, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                   <div style={{ border: '1px solid #004A87', color: '#004A87', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: '9px', padding: '8px 16px', marginBottom: '40px', backgroundColor: 'rgba(0, 74, 135, 0.1)' }}>
-                    Garantía Arquitectónica Aquatech
+                    Madera y Diseño Térmico
                   </div>
                   
                   <h2 className="text-3xl md:text-[42px] mb-8" style={{ fontWeight: 900, color: 'white', textTransform: 'uppercase', lineHeight: '1.2', letterSpacing: '0' }}>
-                    La Inversión Final<br />
-                    en Tu <span style={{ color: '#004A87' }}>Bienestar</span>
+                    Tu Ritual Propio<br />
+                    de <span style={{ color: '#004A87' }}>Relajación</span>
                   </h2>
                   
                   <Link 
                     href="/contacto"
                     style={{ backgroundColor: '#004A87', color: 'white', padding: '20px 40px', fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', width: '100%', textDecoration: 'none', boxSizing: 'border-box' }}
                   >
-                    Hablar con un Ingeniero
+                    Contactar un Especialista
                     <ArrowUpRight size={20} />
                   </Link>
                </div>

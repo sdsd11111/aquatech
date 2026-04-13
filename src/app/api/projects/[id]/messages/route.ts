@@ -133,6 +133,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       }
     })
 
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { title: true }
+    })
+    const projectTitle = project?.title || 'Proyecto'
+
     // If it's an expense, record it in the expenses table too (EXCEPT if it's just a note)
     if (finalType === 'EXPENSE_LOG' && extraData && extraData.amount !== undefined && !extraData.isNote) {
       await prisma.expense.create({
@@ -153,7 +159,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const pushBody = content?.substring(0, 80) || (mediaUrl || media?.url ? '📎 Nuevo archivo adjunto' : 'Nuevo mensaje')
     notifyProjectTeam(
       projectId, userId,
-      `💬 ${session.user.name}`,
+      `💬 ${projectTitle} - ${session.user.name}`,
       pushBody,
       `/admin/operador/proyecto/${projectId}?view=chat`,
       `chat-${projectId}`

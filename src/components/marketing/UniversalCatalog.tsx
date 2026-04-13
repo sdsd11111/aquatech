@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Filter, ShoppingCart, ZoomIn, X, ChevronRight, SlidersHorizontal, Tag } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { catalogData, Product } from '@/data/catalog'
 
 const categories = [
@@ -12,6 +13,7 @@ const categories = [
 ]
 
 export default function UniversalCatalog({ defaultCategory = 'Hidromasajes' }: { defaultCategory?: string }) {
+  const router = useRouter()
   const [activeCategory, setActiveCategory] = useState(defaultCategory)
   const [searchQuery, setSearchQuery] = useState('')
   const [maxPrice, setMaxPrice] = useState(15000)
@@ -111,7 +113,23 @@ export default function UniversalCatalog({ defaultCategory = 'Hidromasajes' }: {
                 {categories.map((cat) => (
                   <button
                     key={cat}
-                    onClick={() => setActiveCategory(cat as any)}
+                    onClick={() => {
+                      setActiveCategory(cat as any)
+                      const routeMap: Record<string, string> = {
+                        'Hidromasajes': 'hidromasajes',
+                        'Turcos': 'turcos',
+                        'Saunas': 'saunas',
+                        'Piletas': 'piletas',
+                        'Tuberías': 'tuberias',
+                        'Agua Potable': 'agua-potable',
+                        'Riego': 'riego',
+                        'Accesorios': 'accesorios'
+                      }
+                      const route = routeMap[cat]
+                      if (route) {
+                        router.push(`/${route}#catalogo`, { scroll: false })
+                      }
+                    }}
                     className={`text-left px-5 py-4 text-[11px] font-bold uppercase tracking-widest transition-all border-b border-gray-100 flex justify-between items-center ${
                       activeCategory === cat 
                       ? 'text-white bg-[#004A87]' 

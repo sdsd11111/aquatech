@@ -1,7 +1,7 @@
 // ============================================================
 // Aquatech CRM — Custom Service Worker (Offline-First) v14
 // ============================================================
-const CACHE_VERSION = 'v30';
+const CACHE_VERSION = 'v31';
 const STATIC_CACHE = `aquatech-static-${CACHE_VERSION}`;
 const PAGES_CACHE  = `aquatech-pages-${CACHE_VERSION}`;
 const ASSETS_CACHE = `aquatech-assets-${CACHE_VERSION}`;
@@ -523,6 +523,7 @@ self.addEventListener('push', (event) => {
     tag: data.tag || 'general',
     renotify: true,
     requireInteraction: false,
+    silent: false, // Ensure sound is not suppressed
     data: {
       url: data.url || '/admin/operador',
       timestamp: Date.now()

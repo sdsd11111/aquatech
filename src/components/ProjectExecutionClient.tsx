@@ -1619,37 +1619,32 @@ export default function ProjectExecutionClient({
             style={{ 
               position: 'fixed', 
               top: 0, left: 0, right: 0, bottom: 0, 
-              backgroundColor: 'rgba(0,0,0,0.85)', 
-              backdropFilter: 'blur(10px)',
+              backgroundColor: isSmallScreen ? '#0b141a' : 'rgba(0,0,0,0.85)', 
+              backdropFilter: isSmallScreen ? 'none' : 'blur(10px)',
               zIndex: 10000, 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
-              padding: isSmallScreen ? '12px' : '40px' 
+              padding: isSmallScreen ? '0' : '40px' 
             }} 
-            onClick={() => setActiveTab('records')}
+            onClick={() => !isSmallScreen && setActiveTab('records')}
           >
             <div 
               style={{ 
                 width: '100%', 
-                maxWidth: '1000px', 
-                height: isSmallScreen ? '95%' : '85%', 
+                maxWidth: isSmallScreen ? '100%' : '1000px', 
+                height: isSmallScreen ? '100%' : '85%', 
                 backgroundColor: '#0b141a', 
-                borderRadius: '24px', 
+                borderRadius: isSmallScreen ? '0' : '24px', 
                 overflow: 'hidden', 
                 display: 'flex', 
                 flexDirection: 'column', 
                 position: 'relative', 
-                boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
-                border: '1px solid rgba(255,255,255,0.1)'
+                boxShadow: isSmallScreen ? 'none' : '0 25px 60px rgba(0,0,0,0.6)',
+                border: isSmallScreen ? 'none' : '1px solid rgba(255,255,255,0.1)'
               }} 
               onClick={e => e.stopPropagation()}
             >
-              {/* Close Handle for Mobile */}
-              <div 
-                style={{ height: '6px', width: '40px', background: 'rgba(255,255,255,0.2)', borderRadius: '3px', margin: '12px auto 4px auto', cursor: 'grab', display: isSmallScreen ? 'block' : 'none' }}
-                onClick={() => setActiveTab('records')}
-              />
               
               <ProjectChatUnified
                 project={project}

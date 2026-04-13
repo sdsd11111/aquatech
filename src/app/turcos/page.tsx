@@ -11,29 +11,29 @@ import WhatsAppButton from '@/components/marketing/WhatsAppButton'
 import ScrollToTop from '@/components/marketing/ScrollToTop'
 
 const workProcess = [
-  { number: "01", title: "Asesoría", desc: "Consultoría técnica personalizada en sitio.", icon: <Users size={20} />, img: "https://cesarweb.b-cdn.net/home/showroom_interior.webp" },
-  { number: "02", title: "Ingeniería", desc: "Diseño y modelado 3D de alta precisión.", icon: <Cpu size={20} />, img: "https://cesarweb.b-cdn.net/home/detalle_ingenieria.webp" },
-  { number: "03", title: "Producción", desc: "Ensamblaje con tecnología certificada IBAX.", icon: <Settings size={20} />, img: "https://cesarweb.b-cdn.net/home/equipo_trabajo.webp" },
-  { number: "04", title: "QA & Test", desc: "Pruebas de presión e hidromasaje rigurosas.", icon: <ShieldCheck size={20} />, img: "https://cesarweb.b-cdn.net/home/matriz_frente.webp" },
-  { number: "05", title: "Entrega", desc: "Instalación experta y garantía Aquatech.", icon: <Award size={20} />, img: "https://cesarweb.b-cdn.net/home/locales-lifestyle.webp" }
+  { number: "01", title: "Diseño & Ingeniería", desc: "Planificación desde cero y cálculo de presiones hidrostáticas para el cuarto.", icon: <Users size={20} />, img: "https://cesarweb.b-cdn.net/home/showroom_interior.webp" },
+  { number: "02", title: "Obra Civil", desc: "Construcción del vaso de hormigón armado con aditivos impermeabilizantes.", icon: <Cpu size={20} />, img: "https://cesarweb.b-cdn.net/home/detalle_ingenieria.webp" },
+  { number: "03", title: "Electromecánica", desc: "Instalación de generadores a gas e integración de bombas silenciosas IBAX.", icon: <Settings size={20} />, img: "https://cesarweb.b-cdn.net/home/equipo_trabajo.webp" },
+  { number: "04", title: "Terminados", desc: "Recubrimientos en bases acrílicas, mosaicos y puertas de cristal templado.", icon: <ShieldCheck size={20} />, img: "https://cesarweb.b-cdn.net/home/matriz_frente.webp" },
+  { number: "05", title: "Solución Integral", desc: "Pruebas de presión, nivelación química y entrega llave en mano.", icon: <Award size={20} />, img: "https://cesarweb.b-cdn.net/home/locales-lifestyle.webp" }
 ]
 
 const iconicModels = [
-  { name: "Modelo DUO", line: "Premium Spa", href: "/hidromasajes/jacuzzis", img: "https://cesarweb.b-cdn.net/Hidromasaje-Aquatech/model-duo.webp" },
-  { name: "Modelo MERENGUE", line: "Social Life", href: "/hidromasajes/jacuzzis", img: "https://cesarweb.b-cdn.net/Hidromasaje-Aquatech/model-merengue.webp" },
-  { name: "Relax Elite", line: "Wellness Line", href: "/hidromasajes/jacuzzis", img: "https://cesarweb.b-cdn.net/Hidromasaje-Aquatech/model-relax.webp" },
-  { name: "Zen Luxury", line: "Oriental Style", href: "/hidromasajes/jacuzzis", img: "https://cesarweb.b-cdn.net/Hidromasaje-Aquatech/hero-hidromasaje.webp" },
+  { name: "Generador Gas 20m³", line: "Potencia Continua", href: "#", img: "https://cesarweb.b-cdn.net/home/hero-slider-3.webp" },
+  { name: "Bomba Silenciosa IBAX", line: "Hidráulica", href: "#", img: "https://cesarweb.b-cdn.net/home/showroom_interior.webp" },
+  { name: "Termostato PTC Perilla", line: "Control", href: "#", img: "https://cesarweb.b-cdn.net/home/detalle_ingenieria.webp" },
+  { name: "Botón Balboa 1144", line: "Automatización", href: "#", img: "https://cesarweb.b-cdn.net/home/equipo_trabajo.webp" },
 ]
 
 const faqs = [
-  { q: "¿QUÉ TIEMPO DE GARANTÍA OFRECEN?", a: "Nuestros hidromasajes cuentan con 2 años de garantía en la estructura autoportante y 1 año sobre los equipos electrónicos y motores." },
-  { q: "¿HACEN ENVÍOS E INSTALACIÓN A OTRAS PROVINCIAS?", a: "Llegamos a nivel nacional. Coordinamos el envío directo y ofrecemos soporte técnico continuo a tu instalador o plomero de confianza para un encaje perfecto." },
-  { q: "¿SE PUEDE PERSONALIZAR LA CANTIDAD DE JETS?", a: "Totalmente. Al ser fabricantes directos, podemos potenciar cualquier modelo añadiendo mayor flujo de presión, jets focalizados o cromoterapia profesional de alta intensidad." },
-  { q: "¿QUÉ INSTALACIONES PREVIAS NECESITO?", a: "Solo requieres de un punto de agua cercano, un desagüe estándar a nivel de piso y un tomacorriente dedicado de 110V o 220V (dependiendo de la potencia técnica final)." },
-  { q: "¿CUÁL ES EL TIEMPO DE FABRICACIÓN?", a: "Nuestros modelos listos en stock se envían en un máximo de 48h. Para aquellos equipos 100% personalizados y configurados a medida tomamos entre 8 y 12 días laborables." },
+  { q: "¿CÓMO EVITO EL SARRO POR LA DUREZA DEL AGUA?", a: "Debido a que el agua en la región suele ser rica en minerales críticos, instalamos sistemas antisarro con filtros especializados que protegen el caldero y las tuberías SCH80, alargando la vida de tu inversión." },
+  { q: "¿CÓMO ASEGURAR QUE FUNCIONE BIEN EN CLIMA FRÍO DE SIERRA?", a: "Para locaciones en pisos altitudinales de la sierra lojana donde el clima es variable, implementamos calderas a gas de alta eficiencia y sistemas térmicos inverter que compensan sin problemas las bajas temperaturas." },
+  { q: "¿CONSTRUYEN LA ESTRUCTURA DESDE CERO?", a: "Totalmente. Nuestro diseño e ingeniería integra la obra civil desarrollando un vaso de hormigón reforzado con aditivos altamente impermeabilizantes para sostener las extremas humedades y presiones con garantía." },
+  { q: "¿LOS SISTEMAS SON MUY RUIDOSOS?", a: "No. Utilizamos bombas centrífugas silenciosas certificadas por IBAX y ubicamos los cuartos de máquinas de manera estratégica para asegurar un ambiente libre de ruidos en la sala de relajación." },
+  { q: "¿ES POSIBLE AUTOMATIZAR EL CUARTO DE VAPOR?", a: "Sí, la domótica es parte de nuestro servicio integral. Es posible integrar equipos periféricos como el botón pulsador Balboa o paneles remotos que pueden regular la temperatura o iniciar el ciclo desde tu celular." },
 ]
 
-export default function HidromasajesPage() {
+export default function TurcosPage() {
   const [activeFaq, setActiveFaq] = useState<number | null>(0)
 
   return (
@@ -159,14 +159,14 @@ export default function HidromasajesPage() {
         .mobile-pagination { display: none; }
       `}</style>
 
-      {/* Hero Section - RESTORED TO 95VH IMPACT */}
+      {/* Hero Section */}
       <section className="relative h-[95vh] flex flex-col items-center justify-center overflow-hidden bg-black">
         <motion.div 
           initial={{ scale: 1.1, opacity: 0 }}
           animate={{ scale: 1, opacity: 0.6 }}
           transition={{ duration: 3 }}
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('https://cesarweb.b-cdn.net/Hidromasaje-Aquatech/hero-hidromasaje.webp')" }}
+          style={{ backgroundImage: "url('https://cesarweb.b-cdn.net/home/hero-slider-2.webp')" }}
         />
         <div className="absolute inset-0 bg-black/40 z-0"></div>
         
@@ -177,8 +177,8 @@ export default function HidromasajesPage() {
             transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
             className="text-5xl sm:text-6xl md:text-[110px] font-black text-white mb-10 tracking-tighter leading-[0.9] md:leading-[0.8] text-center"
           >
-            Hidromasaje.<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#004A87] to-[#0070C0]">Excelencia Pura.</span>
+            Baños Turcos.<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#004A87] to-[#0070C0]">Vapor y Salud.</span>
           </motion.h1>
 
           <Link 
@@ -195,7 +195,7 @@ export default function HidromasajesPage() {
         <div className="central-container flex flex-col items-center">
           <div className="text-center mb-16 md:mb-28 px-4">
             <span className="text-[#004A87] font-black uppercase tracking-[0.6em] md:tracking-[0.8em] text-[8px] md:text-[10px] mb-6 md:mb-8 block font-brand">Ingeniería Aquatech</span>
-            <h2 className="text-4xl md:text-[80px] font-black text-black mb-6 md:mb-8 tracking-tighter uppercase whitespace-normal md:whitespace-nowrap leading-none">Modelos Icónicos</h2>
+            <h2 className="text-4xl md:text-[80px] font-black text-black mb-6 md:mb-8 tracking-tighter uppercase whitespace-normal md:whitespace-nowrap leading-none">Generadores y Equipos</h2>
             <div className="w-16 md:w-24 h-1.5 md:h-2 bg-[#004A87] mx-auto"></div>
           </div>
 
@@ -318,14 +318,14 @@ export default function HidromasajesPage() {
           minWidth: 0
         }}>
            <div className="quote-form-card" style={{ width: '100%', backgroundColor: 'white', padding: '50px', boxShadow: '50px 50px 0px rgba(0,0,0,0.2)' }}>
-              <DynamicQuoteForm categoryName="Hidromasajes" />
+              <DynamicQuoteForm categoryName="Baños Turcos" />
            </div>
         </div>
       </section>
 
       {/* Nuevo Catálogo Universal Integrado */}
       <section id="catalogo">
-        <UniversalCatalog defaultCategory="Hidromasajes" />
+        <UniversalCatalog defaultCategory="Turcos" />
       </section>
 
       {/* 50/50 CTA y Preguntas Frecuentes (FAQ) - FULL WIDTH */}
@@ -337,7 +337,7 @@ export default function HidromasajesPage() {
             {/* Lado Izquierdo: CTA Estructural */}
             <div className="cta-side" style={{ 
               backgroundColor: '#050505', 
-              backgroundImage: 'url("https://cesarweb.b-cdn.net/Hidromasaje-Aquatech/hero-hidromasaje.webp")',
+              backgroundImage: 'url("https://cesarweb.b-cdn.net/home/hero-slider-2.webp")',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               padding: '80px 60px', 
